@@ -16,3 +16,5 @@ db.sqlite3
 
 # Logs
 *.log
+
+env.py
