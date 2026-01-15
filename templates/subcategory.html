@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ subcategory.name }} - OnlyStudies{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+{% endblock %}
+
+{% block content %}
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Subcategory Header Section -->
+        <section class="subcategory-header py-5" style="background-color: #f8f9fa;">
+            <div class="container">
+                <a href="{% url 'category' category.slug %}" class="btn btn-outline-secondary btn-sm mb-3">
+                    &larr; Back to {{ category.name }}
+                </a>
+                <h1 class="mb-2">{{ subcategory.name }}</h1>
+                <p class="text-muted">{{ subcategory.description }}</p>
+            </div>
+        </section>
+
+        <!-- Content Section -->
+        <section class="content-section py-5">
+            <div class="container">
+                <div class="row">
+                    <!-- Main Content Area -->
+                    <div class="col-12 col-lg-8">
+                        <div class="card mb-4">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ subcategory.name }} Content</h5>
+                                <p class="card-text">
+                                    Welcome to {{ subcategory.name }}! This section contains resources, courses, and materials 
+                                    related to {{ subcategory.name }} under the {{ category.name }} category.
+                                </p>
+                                <div class="alert alert-info" role="alert">
+                                    <strong>Coming Soon:</strong> More content and resources will be added to this section.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sidebar -->
+                    <div class="col-12 col-lg-4">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">Quick Navigation</h5>
+                                <ul class="list-unstyled">
+                                    <li><a href="{% url 'home' %}" class="btn btn-link btn-sm">Home</a></li>
+                                    <li><a href="{% url 'category' category.slug %}" class="btn btn-link btn-sm">{{ category.name }}</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+{% endblock %}

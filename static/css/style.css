@@ -1,3 +1,449 @@
-h1 {
-    color: red;
+/* Custom Theme & Layout Styles */
+:root {
+    --primary-color: #0d6efd;
+    --text-primary: #212529;
+    --text-secondary: #6c757d;
+    --border-color: #dee2e6;
+    --bg-light: #f8f9fa;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background-color: #f5f5f5;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Navbar Dropdown Fix */
+.navbar {
+    overflow: visible !important;
+}
+
+.navbar-collapse {
+    overflow: visible !important;
+}
+
+/* Header Styles */
+.site-header {
+    background-color: #007075 !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+    width: 100%;
+    height: 92px;
+    padding: 0px 12px !important;
+    overflow: visible !important;
+    position: relative;
+    z-index: 1000;
+}
+
+.site-header .container-fluid {
+    padding: 0px;
+    height: 100%;
+}
+
+.site-header .row {
+    margin: 0;
+    padding: 2px 0;
+}
+
+.logo {
+    color: white !important;
+    font-size: 1.25rem;
+}
+
+.logo i {
+    color: var(--primary-color);
+}
+
+.logo-text {
+    display: inline-block;
+}
+
+@media (max-width: 576px) {
+    .logo-text {
+        font-size: 0.9rem;
+    }
+}
+
+/* Search Input Styling */
+.input-group-text {
+    padding-left: 0.75rem;
+}
+
+.site-header .row {
+    justify-content: flex-start;
+}
+
+.site-header .row .col-md-5 {
+    margin-left: 0;
+    margin-right: 0;
+}
+
+.form-control:focus {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+/* Category Dropdowns */
+.dropdown {
+    position: relative;
+}
+
+.dropdown-toggle {
+    font-weight: 500;
+    text-decoration: none;
+    color: white !important;
+}
+
+.dropdown-toggle::after {
+    display: inline-block !important;
+    margin-left: 0.5rem;
+    vertical-align: 0.255em;
+    content: '';
+    border-top: 0.3em solid white !important;
+    border-right: 0.3em solid transparent;
+    border-bottom: 0;
+    border-left: 0.3em solid transparent;
+}
+
+.dropdown-toggle:hover,
+.dropdown-toggle:focus,
+.dropdown-toggle.show {
+    color: white !important;
+    background-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+.dropdown-toggle[aria-expanded="true"]::after {
+    transform: rotate(180deg);
+    transition: transform 0.2s;
+}
+
+.dropdown-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    z-index: 1060;
+    display: none;
+    min-width: 10rem;
+    padding: 0.5rem 0;
+    margin: 0.25rem 0 0 0;
+    background-color: white;
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    visibility: visible;
+}
+
+.dropdown-menu.show {
+    display: block !important;
+    visibility: visible !important;
+}
+
+.dropdown-item {
+    display: block;
+    width: 100%;
+    padding: 0.5rem 1rem;
+    clear: both;
+    color: #212529;
+    text-align: inherit;
+    white-space: nowrap;
+    background-color: transparent;
+    border: 0;
+    cursor: pointer;
+}
+
+.dropdown-item:hover,
+.dropdown-item:focus {
+    color: #16213e;
+    background-color: #f8f9fa;
+}
+
+/* Search and Category Section */
+.search-category-section {
+    padding: 2rem 0;
+    position: relative;
+    z-index: 100;
+    overflow: visible;
+}
+
+.search-category-section .input-group {
+    width: 100%;
+}
+
+.search-btn {
+    padding: 0.375rem 1rem;
+    font-weight: 500;
+}
+
+/* Button Styles */
+.btn {
+    transition: all 0.3s ease !important;
+    text-decoration: none;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    text-decoration: none;
+}
+
+.btn-outline-dark:hover {
+    color: white;
+    background-color: #212529;
+    border-color: #212529;
+}
+
+.btn-outline-secondary:hover {
+    color: white;
+    background-color: #6c757d;
+    border-color: #6c757d;
+}
+
+.btn-warning:hover,
+.btn-warning.btn:hover {
+    background-color: #ff8c00 !important;
+    border-color: #ff8c00 !important;
+    color: white;
+}
+
+/* Auth Links */
+.auth-link {
+    color: white !important;
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 0.95rem;
+    white-space: nowrap;
+}
+
+.auth-link:hover {
+    color: var(--primary-color);
+}
+
+/* Main Content */
+.main-content {
+    flex: 1;
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 0;
+}
+
+.main-content section {
+    padding: 1rem 1.5rem;
+}
+
+.blog-notifications-section {
+    width: 1100px;
+    min-height: 386.458px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.blog-notifications-section > .row {
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+}
+
+@media (max-width: 1250px) {
+    .blog-notifications-section {
+        width: 100%;
+        min-height: auto;
+    }
+}
+
+@media (max-width: 1250px) {
+    .main-content {
+        width: 95%;
+    }
+}
+
+@media (max-width: 768px) {
+    .main-content {
+        width: 100%;
+    }
+    .main-content section {
+        padding: 1rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .main-content section {
+        padding: 0.75rem 0.5rem;
+    }
+}
+
+/* Cards */
+.card {
+    border: 1px solid var(--border-color);
+    box-shadow: none;
+    border-radius: 0;
+    width: 100%;
+}
+
+.card-body {
+    padding: 1.5rem;
+    width: 100%;
+}
+
+.card-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* Blog Feed Placeholder */
+.blog-placeholder {
+    height: 200px;
+    border: 2px dashed var(--border-color);
+    position: relative;
+}
+
+@media (min-width: 992px) {
+    .blog-placeholder {
+        height: 220px;
+    }
+}
+
+/* Notifications List */
+.notification-list {
+    margin-bottom: 0;
+}
+
+.notification-item {
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-primary);
+}
+
+.notification-item:last-child {
+    border-bottom: none;
+}
+
+/* Exam Items */
+.exam-grid {
+    display: flex;
+    gap: 2rem;
+    flex-wrap: wrap;
+}
+
+.exam-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0;
+    background: transparent;
+    border: none;
+}
+
+.exam-item span {
+    font-weight: 400;
+    font-size: 1rem;
+}
+
+/* Exam Cards */
+.exam-card {
+    border: 1px solid var(--border-color);
+    transition: box-shadow 0.3s ease;
+}
+
+.exam-card:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.exam-card h6 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.exam-description {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+    min-height: 48px;
+}
+
+.section-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* Question Section */
+.question-section {
+    width: 1200px;
+    min-height: 450px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.question-section .card {
+    width: 100%;
+    min-height: 450px;
+}
+
+@media (max-width: 1250px) {
+    .question-section {
+        width: 100%;
+        min-height: auto;
+    }
+    
+    .question-section .card {
+        min-height: auto;
+    }
+}
+
+/* Footer Styles */
+.site-footer {
+    margin-top: auto;
+    font-size: 0.9rem;
+}
+
+.footer-link {
+    color: var(--text-primary);
+}
+
+.footer-link:hover {
+    color: var(--primary-color);
+}
+
+.social-icon {
+    color: var(--text-primary);
+    font-size: 1.25rem;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.social-icon:hover {
+    color: var(--primary-color);
+}
+
+
+
+/* Responsive Adjustments */
+@media (max-width: 767px) {
+    .site-header .row > div {
+        text-align: center;
+    }
+    
+    .site-footer .row > div {
+        justify-content: center;
+        text-align: center;
+    }
+}
+
+/* Ensure proper spacing on mobile */
+@media (max-width: 575px) {
+    .card-body {
+        padding: 1rem;
+    }
+    
+    .exam-item {
+        font-size: 0.9rem;
+    }
 }

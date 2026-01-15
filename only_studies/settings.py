@@ -30,11 +30,14 @@ TEMPLATES_DIR = os.path.join(BASE_DIR, 'templates')
 SECRET_KEY = os.environ.get('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# Default to True for local dev; set DEBUG=False in production via env
+DEBUG = os.environ.get("DEBUG", "True").lower() == "true"
 
 # Allow local dev and common loopback hosts; add prod domains as needed
 ALLOWED_HOSTS = ["localhost", 
                  "127.0.0.1",
+                 "testserver",
+                 "0.0.0.0",
                  "only-studies-61de8e7773bd.herokuapp.com"]
 
 
@@ -142,3 +145,47 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+# Security Settings for Production/Heroku
+# https://docs.djangoproject.com/en/4.2/topics/security/
+
+# Ensure HTTPS redirect is disabled in development
+if DEBUG:
+    SECURE_SSL_REDIRECT = False
+    SESSION_COOKIE_SECURE = False
+    CSRF_COOKIE_SECURE = False
+
+if not DEBUG:
+    # SSL/HTTPS Configuration
+    SECURE_SSL_REDIRECT = True
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+    # Session & CSRF Cookie Security
+    SESSION_COOKIE_SECURE = True
+    SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_AGE = 1209600  # 2 weeks
+    CSRF_COOKIE_SECURE = True
+    CSRF_COOKIE_HTTPONLY = True
+    CSRF_COOKIE_AGE = 31449600  # 1 year
+
+    # HSTS (HTTP Strict Transport Security)
+    SECURE_HSTS_SECONDS = 31536000  # 1 year
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+
+    # Clickjacking Protection
+    X_FRAME_OPTIONS = 'DENY'
+
+    # Content Security Policy
+    SECURE_CONTENT_SECURITY_POLICY = {
+        "default-src": ("'self'",),
+        "script-src": ("'self'", "'unsafe-inline'", "cdn.jsdelivr.net", "code.jquery.com"),
+        "style-src": ("'self'", "'unsafe-inline'", "cdn.jsdelivr.net"),
+        "img-src": ("'self'", "data:", "https:"),
+        "font-src": ("'self'", "cdn.jsdelivr.net"),
+        "connect-src": ("'self'",),
+    }
+
+    # Additional Security Headers
+    SECURE_CONTENT_SECURITY_POLICY_REPORT_ONLY = False

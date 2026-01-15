@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ category.name }} - OnlyStudies{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+{% endblock %}
+
+{% block content %}
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Category Header Section -->
+        <section class="category-header py-5" style="background-color: #f8f9fa;">
+            <div class="container">
+                <h1 class="mb-2">{{ category.name }}</h1>
+                <p class="text-muted">{{ category.description }}</p>
+            </div>
+        </section>
+
+        <!-- Subcategories Section -->
+        <section class="subcategories-section py-5">
+            <div class="container">
+                {% if subcategories %}
+                    <h2 class="mb-4">Available Courses</h2>
+                    <div class="row g-4">
+                        {% for subcategory in subcategories %}
+                            <div class="col-12 col-md-6 col-lg-4">
+                                <div class="card h-100 shadow-sm">
+                                    <div class="card-body">
+                                        <h5 class="card-title">{{ subcategory.name }}</h5>
+                                        <p class="card-text text-muted">{{ subcategory.description }}</p>
+                                        <a href="{% url 'subcategory' category.slug subcategory.slug %}" class="btn btn-primary btn-sm">
+                                            Explore
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="alert alert-info" role="alert">
+                        No courses available in this category yet.
+                    </div>
+                {% endif %}
+            </div>
+        </section>
+    </main>
+{% endblock %}

@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title|default:"Apply for Exam" }}{% endblock %}
+
+{% block content %}
+<div class="container mt-5 mb-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <h3 class="mb-0"><i class="bi bi-file-earmark-text me-2"></i>Application Confirmation</h3>
+                </div>
+                <div class="card-body text-center py-5">
+                    <div class="mb-4">
+                        <i class="bi bi-check-circle-fill text-success" style="font-size: 5rem;"></i>
+                    </div>
+                    
+                    <h2 class="mb-3">Application Submitted!</h2>
+                    
+                    <div class="alert alert-info">
+                        <h5 class="mb-3">You have successfully applied for:</h5>
+                        <h4 class="text-primary mb-0"><strong>{{ exam_name }}</strong></h4>
+                    </div>
+                    
+                    <div class="mt-4 p-4 bg-light rounded">
+                        <p class="mb-2"><strong>What's Next?</strong></p>
+                        <ul class="list-unstyled text-start" style="max-width: 500px; margin: 0 auto;">
+                            <li class="mb-2"><i class="bi bi-check2 text-success me-2"></i>Your application has been received</li>
+                            <li class="mb-2"><i class="bi bi-check2 text-success me-2"></i>We will review your application shortly</li>
+                            <li class="mb-2"><i class="bi bi-check2 text-success me-2"></i>You will receive a confirmation email soon</li>
+                            <li class="mb-2"><i class="bi bi-check2 text-success me-2"></i>Check your dashboard for updates</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <p class="text-muted mb-3">
+                            <i class="bi bi-info-circle me-1"></i>
+                            This is a test application for demonstration purposes only.
+                        </p>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-center mt-4">
+                        <a href="{% url 'home' %}" class="btn btn-primary">
+                            <i class="bi bi-house-door me-2"></i>Back to Home
+                        </a>
+                        <a href="{% url 'forum' %}" class="btn btn-outline-primary">
+                            <i class="bi bi-chat-dots me-2"></i>Visit Forum
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Additional Information Card -->
+            <div class="card shadow-sm mt-4">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-lightbulb me-2"></i>Exam Preparation Tips</h5>
+                    <ul class="mb-0">
+                        <li>Start your preparation early</li>
+                        <li>Create a study schedule and stick to it</li>
+                        <li>Use practice tests to identify weak areas</li>
+                        <li>Join study groups and discuss with peers</li>
+                        <li>Take regular breaks to avoid burnout</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

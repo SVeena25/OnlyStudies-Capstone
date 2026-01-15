@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 700" width="500" height="700">
+  <!-- Graduation Cap -->
+  <g>
+    <!-- Cap top -->
+    <polygon points="100,120 250,30 400,120 380,140 120,140" fill="#FF8C42"/>
+    <!-- Cap tassel cord -->
+    <line x1="250" y1="30" x2="250" y2="180" stroke="#FF8C42" stroke-width="8"/>
+    <!-- Tassel ball -->
+    <circle cx="250" cy="190" r="15" fill="#FF8C42"/>
+  </g>
+  
+  <!-- Owl body/head -->
+  <ellipse cx="250" cy="350" rx="110" ry="130" fill="#FF8C42" stroke="#FF8C42" stroke-width="2"/>
+  
+  <!-- Left ear tuft -->
+  <polygon points="180,240 160,200 190,220" fill="#FF8C42"/>
+  <!-- Right ear tuft -->
+  <polygon points="320,240 340,200 310,220" fill="#FF8C42"/>
+  
+  <!-- Left eye outer -->
+  <circle cx="190" cy="300" r="55" fill="none" stroke="#FF8C42" stroke-width="10"/>
+  <!-- Left eye white -->
+  <circle cx="190" cy="300" r="32" fill="#ffffff"/>
+  <!-- Left pupil -->
+  <circle cx="190" cy="305" r="18" fill="#FF8C42"/>
+  <!-- Left pupil shine -->
+  <circle cx="185" cy="300" r="7" fill="#ffffff"/>
+  
+  <!-- Right eye outer -->
+  <circle cx="310" cy="300" r="55" fill="none" stroke="#FF8C42" stroke-width="10"/>
+  <!-- Right eye white -->
+  <circle cx="310" cy="300" r="32" fill="#ffffff"/>
+  <!-- Right pupil -->
+  <circle cx="310" cy="305" r="18" fill="#FF8C42"/>
+  <!-- Right pupil shine -->
+  <circle cx="315" cy="300" r="7" fill="#ffffff"/>
+  
+  <!-- Nose -->
+  <ellipse cx="250" cy="350" rx="12" ry="16" fill="#ffffff"/>
+  
+  <!-- Beak point -->
+  <polygon points="250,350 240,370 260,370" fill="#FF8C42"/>
+  
+  <!-- Book/wings base curve -->
+  <path d="M 180 420 Q 180 480 250 520 Q 320 480 320 420" fill="none" stroke="#FF8C42" stroke-width="20" stroke-linecap="round"/>
+  
+  <!-- Left book page -->
+  <g>
+    <rect x="140" y="440" width="100" height="110" fill="#ffffff" stroke="#FF8C42" stroke-width="5" rx="8"/>
+    <line x1="155" y1="460" x2="225" y2="460" stroke="#FF8C42" stroke-width="3"/>
+    <line x1="155" y1="485" x2="225" y2="485" stroke="#FF8C42" stroke-width="3"/>
+    <line x1="155" y1="510" x2="225" y2="510" stroke="#FF8C42" stroke-width="3"/>
+    <line x1="155" y1="535" x2="225" y2="535" stroke="#FF8C42" stroke-width="3"/>
+  </g>
+  
+  <!-- Right book page -->
+  <g>
+    <rect x="260" y="440" width="100" height="110" fill="#ffffff" stroke="#FF8C42" stroke-width="5" rx="8"/>
+    <line x1="275" y1="460" x2="345" y2="460" stroke="#FF8C42" stroke-width="3"/>
+    <line x1="275" y1="485" x2="345" y2="485" stroke="#FF8C42" stroke-width="3"/>
+    <line x1="275" y1="510" x2="345" y2="510" stroke="#FF8C42" stroke-width="3"/>
+    <line x1="275" y1="535" x2="345" y2="535" stroke="#FF8C42" stroke-width="3"/>
+  </g>
+  
+  <!-- Book spine -->
+  <rect x="240" y="440" width="20" height="110" fill="#FFB380" stroke="#FF8C42" stroke-width="3" rx="4"/>
+</svg>

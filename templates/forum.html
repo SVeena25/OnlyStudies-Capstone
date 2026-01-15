@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title|default:"Student Forum" }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4 mb-5">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="bi bi-chat-dots me-2"></i>Student Forum</h2>
+                <a href="{% url 'ask_question' %}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle me-2"></i>Ask Question
+                </a>
+            </div>
+
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            {% if questions %}
+                <div class="list-group">
+                    {% for question in questions %}
+                        <a href="{% url 'forum_question' question.slug %}" class="list-group-item list-group-item-action">
+                            <div class="d-flex w-100 justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <h5 class="mb-1">
+                                        {{ question.title }}
+                                        {% if question.is_answered %}
+                                            <span class="badge bg-success ms-2">Answered</span>
+                                        {% endif %}
+                                    </h5>
+                                    <p class="mb-1 text-muted">{{ question.content|truncatewords:20 }}</p>
+                                    <small class="text-muted">
+                                        <i class="bi bi-person-circle"></i> {{ question.author.username }}
+                                        {% if question.category %}
+                                            • <span class="badge bg-secondary">{{ question.category.name }}</span>
+                                        {% endif %}
+                                        • <i class="bi bi-eye"></i> {{ question.views }} views
+                                        • <i class="bi bi-chat-left"></i> {{ question.answer_count }} answers
+                                        • {{ question.created_at|timesince }} ago
+                                    </small>
+                                </div>
+                            </div>
+                        </a>
+                    {% endfor %}
+                </div>
+
+                <!-- Pagination -->
+                {% if is_paginated %}
+                    <nav aria-label="Forum pagination" class="mt-4">
+                        <ul class="pagination justify-content-center">
+                            {% if page_obj.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page=1">&laquo;&laquo;</a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}">&laquo;</a>
+                                </li>
+                            {% endif %}
+                            
+                            <li class="page-item active">
+                                <span class="page-link">{{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+                            </li>
+                            
+                            {% if page_obj.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.next_page_number }}">&raquo;</a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">&raquo;&raquo;</a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                {% endif %}
+
+            {% else %}
+                <div class="alert alert-info text-center">
+                    <i class="bi bi-info-circle me-2"></i>
+                    No questions yet. Be the first to ask a question!
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
