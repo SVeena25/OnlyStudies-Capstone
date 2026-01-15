@@ -31,7 +31,7 @@ SECRET_KEY = os.environ.get('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 # Default to True for local dev; set DEBUG=False in production via env
-DEBUG = False if os.environ.get('DEBUG') == 'False' else True
+DEBUG = False
 
 # Allow local dev and common loopback hosts; add prod domains as needed
 ALLOWED_HOSTS = ["localhost", 
