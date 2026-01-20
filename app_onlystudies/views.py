@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.db.models import Q
 from django.views.generic import TemplateView, CreateView, ListView, DetailView
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
@@ -17,6 +18,36 @@ class HomePage(TemplateView):
     Displays home page
     """
     template_name = 'index.html'
+
+
+class SearchResultsView(TemplateView):
+    """
+    Simple search across blog posts and forum questions
+    """
+    template_name = 'search_results.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        query = (self.request.GET.get('q') or '').strip()
+
+        blog_results = BlogPost.objects.none()
+        forum_results = ForumQuestion.objects.none()
+
+        if query:
+            blog_results = BlogPost.objects.filter(
+                is_published=True
+            ).filter(
+                Q(title__icontains=query) | Q(content__icontains=query)
+            ).select_related('author', 'category')
+
+            forum_results = ForumQuestion.objects.filter(
+                Q(title__icontains=query) | Q(content__icontains=query)
+            ).select_related('author', 'category')
+
+        context['search_query'] = query
+        context['blog_results'] = blog_results
+        context['forum_results'] = forum_results
+        return context
 
 
 class SignUpView(CreateView):
@@ -173,6 +204,36 @@ class BlogFeedView(ListView):
         """Add additional context"""
         context = super().get_context_data(**kwargs)
         context['page_title'] = 'Blog Feed'
+        return context
+
+
+class BlogPostDetailView(DetailView):
+    """
+    View for displaying a single blog post
+    """
+    model = BlogPost
+    template_name = 'blog_detail.html'
+    context_object_name = 'post'
+    slug_field = 'slug'
+    slug_url_kwarg = 'slug'
+    
+    def get_queryset(self):
+        """Return only published blog posts"""
+        return BlogPost.objects.filter(is_published=True).select_related('author', 'category')
+    
+    def get_context_data(self, **kwargs):
+        """Add additional context"""
+        context = super().get_context_data(**kwargs)
+        context['page_title'] = context['post'].title
+        
+        # Get related posts from the same category (exclude current post)
+        post = context['post']
+        related_posts = BlogPost.objects.filter(
+            is_published=True,
+            category=post.category
+        ).exclude(id=post.id).select_related('author', 'category')[:4]
+        context['related_posts'] = related_posts
+        
         return context
 
 

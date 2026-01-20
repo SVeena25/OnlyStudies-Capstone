@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Search Results | OnlyStudies{% endblock %}
+
+{% block content %}
+<div class="container mt-4 mb-5">
+    <div class="row">
+        <div class="col-12 col-lg-10 mx-auto">
+            <h2 class="mb-4">Search Results</h2>
+            <form class="mb-4" action="{% url 'search' %}" method="get">
+                <div class="input-group">
+                    <input type="text" name="q" class="form-control" placeholder="Search blog posts or forum questions" value="{{ search_query }}" aria-label="Search">
+                    <button class="btn btn-primary" type="submit">Search</button>
+                </div>
+            </form>
+
+            {% if search_query %}
+                <p class="text-muted">Showing results for "{{ search_query }}"</p>
+            {% else %}
+                <p class="text-muted">Type a keyword to search blog posts and forum questions.</p>
+            {% endif %}
+
+            <!-- Blog Results -->
+            <div class="mt-4">
+                <h4>Blog Posts</h4>
+                {% if blog_results %}
+                    <div class="list-group">
+                        {% for post in blog_results %}
+                            <a href="{% url 'blog_detail' post.slug %}" class="list-group-item list-group-item-action">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h5 class="mb-1">{{ post.title }}</h5>
+                                    <small>{{ post.created_at|date:"M d, Y" }}</small>
+                                </div>
+                                <p class="mb-1 text-muted">{{ post.content|truncatewords:30 }}</p>
+                                <small class="text-muted">By {{ post.author.get_full_name|default:post.author.username }}{% if post.category %} • {{ post.category.name }}{% endif %}</small>
+                            </a>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted">No blog posts found.</p>
+                {% endif %}
+            </div>
+
+            <!-- Forum Results -->
+            <div class="mt-5">
+                <h4>Forum Questions</h4>
+                {% if forum_results %}
+                    <div class="list-group">
+                        {% for question in forum_results %}
+                            <a href="{% url 'forum_question' question.slug %}" class="list-group-item list-group-item-action">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h5 class="mb-1">{{ question.title }}</h5>
+                                    <small>{{ question.created_at|date:"M d, Y" }}</small>
+                                </div>
+                                <p class="mb-1 text-muted">{{ question.content|truncatewords:30 }}</p>
+                                <small class="text-muted">By {{ question.author.get_full_name|default:question.author.username }}{% if question.category %} • {{ question.category.name }}{% endif %}</small>
+                            </a>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted">No forum questions found.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

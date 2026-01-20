@@ -10,6 +10,8 @@ urlpatterns = [
         views.CustomLoginView.as_view(), name='login'),
     path('logout/', 
         views.CustomLogoutView.as_view(), name='logout'),
+    path('search/', 
+        views.SearchResultsView.as_view(), name='search'),
     path('category/<slug:category_slug>/', 
         views.CategoryView.as_view(), name='category'),
     path('category/<slug:category_slug>/<slug:subcategory_slug>/', 
@@ -18,6 +20,8 @@ urlpatterns = [
     # Blog Feed
     path('blog/', 
         views.BlogFeedView.as_view(), name='blog_feed'),
+    path('blog/<slug:slug>/', 
+        views.BlogPostDetailView.as_view(), name='blog_detail'),
     
     # Forum
     path('forum/', 

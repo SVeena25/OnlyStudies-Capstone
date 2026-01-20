@@ -37,7 +37,7 @@
                             <ul class="list-unstyled notification-list" id="notifications-container">
                                 <li class="notification-item"><em>Loading notifications...</em></li>
                             </ul>
-                            <button class="btn btn-outline-dark btn-sm w-100 mt-2">View Updates</button>
+                            <button id="view-updates-btn" class="btn btn-outline-dark btn-sm w-100 mt-2">View Updates</button>
                         </div>
                     </div>
                 </div>
@@ -120,58 +120,75 @@
 
 {% block extra_js %}
 <script>
-    // Fetch Blog Feed
-    fetch('{% url "blog_feed_api" %}')
-        .then(response => response.json())
-        .then(data => {
-            const blogContainer = document.getElementById('blog-feed-container');
-            if (data.blogs && data.blogs.length > 0) {
-                const blog = data.blogs[0];
-                let html = '<div class="blog-post">';
-                
-                if (blog.featured_image) {
-                    html += `<img src="${blog.featured_image}" alt="${blog.title}" class="img-fluid rounded mb-3" style="width: 100%; object-fit: cover; max-height: 300px;">`;
+    // Blog Feed loader
+    function loadBlogFeed() {
+        fetch('{% url "blog_feed_api" %}')
+            .then(response => response.json())
+            .then(data => {
+                const blogContainer = document.getElementById('blog-feed-container');
+                if (data.blogs && data.blogs.length > 0) {
+                    const blog = data.blogs[0];
+                    let html = '<div class="blog-post">';
+                    
+                    if (blog.featured_image) {
+                        html += `<img src="${blog.featured_image}" alt="${blog.title}" class="img-fluid rounded mb-3" style="width: 100%; object-fit: cover; max-height: 300px;">`;
+                    }
+                    
+                    html += `<h6>${blog.title}</h6>`;
+                    html += `<small class="text-muted">By ${blog.author} • ${new Date(blog.created_at).toLocaleDateString()}</small>`;
+                    html += `<p class="mt-2">${blog.content}...</p>`;
+                    html += `<a href="/blog/${blog.slug}/" class="btn btn-sm btn-primary">Read More</a>`;
+                    html += '</div>';
+                    
+                    blogContainer.innerHTML = html;
+                } else {
+                    blogContainer.innerHTML = '<em class="text-muted">No blog posts available</em>';
                 }
-                
-                html += `<h6>${blog.title}</h6>`;
-                html += `<small class="text-muted">By ${blog.author} • ${new Date(blog.created_at).toLocaleDateString()}</small>`;
-                html += `<p class="mt-2">${blog.content}...</p>`;
-                html += '<a href="#" class="btn btn-sm btn-primary">Read More</a>';
-                html += '</div>';
-                
-                blogContainer.innerHTML = html;
-            } else {
-                blogContainer.innerHTML = '<em class="text-muted">No blog posts available</em>';
-            }
-        })
-        .catch(error => {
-            console.log('Blog feed error:', error);
-            document.getElementById('blog-feed-container').innerHTML = '<em class="text-muted">Unable to load blog feed</em>';
-        });
+            })
+            .catch(error => {
+                console.log('Blog feed error:', error);
+                document.getElementById('blog-feed-container').innerHTML = '<em class="text-muted">Unable to load blog feed</em>';
+            });
+    }
 
-    // Fetch Notifications
-    fetch('{% url "notifications_api" %}')
-        .then(response => response.json())
-        .then(data => {
-            const notificationsContainer = document.getElementById('notifications-container');
-            
-            if (data.notifications && data.notifications.length > 0) {
-                let html = '';
-                data.notifications.forEach(notification => {
-                    html += `<li class="notification-item" title="${notification.message}">
-                        <strong>${notification.title}</strong>
-                        <small class="text-muted d-block">${new Date(notification.created_at).toLocaleDateString()}</small>
-                    </li>`;
-                });
-                notificationsContainer.innerHTML = html;
-            } else {
-                notificationsContainer.innerHTML = '<li class="notification-item"><em>No new notifications</em></li>';
-            }
-        })
-        .catch(error => {
-            console.log('Notifications error:', error);
-            document.getElementById('notifications-container').innerHTML = '<li class="notification-item"><em>Sign in to view notifications</em></li>';
-        });
+    // Notifications loader (used on load + View Updates button)
+    function loadNotifications(showRefreshing = false) {
+        const notificationsContainer = document.getElementById('notifications-container');
+        if (showRefreshing) {
+            notificationsContainer.innerHTML = '<li class="notification-item"><em>Refreshing updates...</em></li>';
+        }
+
+        fetch('{% url "notifications_api" %}')
+            .then(response => response.json())
+            .then(data => {
+                if (data.notifications && data.notifications.length > 0) {
+                    let html = '';
+                    data.notifications.forEach(notification => {
+                        html += `<li class="notification-item" title="${notification.message}">
+                            <strong>${notification.title}</strong>
+                            <small class="text-muted d-block">${new Date(notification.created_at).toLocaleDateString()}</small>
+                        </li>`;
+                    });
+                    notificationsContainer.innerHTML = html;
+                } else {
+                    notificationsContainer.innerHTML = '<li class="notification-item"><em>No new notifications</em></li>';
+                }
+            })
+            .catch(error => {
+                console.log('Notifications error:', error);
+                notificationsContainer.innerHTML = '<li class="notification-item"><em>Sign in to view notifications</em></li>';
+            });
+    }
+
+    // Initial loads
+    loadBlogFeed();
+    loadNotifications();
+
+    // Wire up View Updates button to refresh notifications
+    const viewUpdatesBtn = document.getElementById('view-updates-btn');
+    if (viewUpdatesBtn) {
+        viewUpdatesBtn.addEventListener('click', () => loadNotifications(true));
+    }
 </script>
 {% endblock %}
 
