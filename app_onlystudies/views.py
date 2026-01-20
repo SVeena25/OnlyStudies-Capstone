@@ -167,23 +167,26 @@ def notifications_api(request):
     Returns latest 5 unread notifications for logged-in user
     """
     if not request.user.is_authenticated:
-        return JsonResponse({'notifications': [], 'error': 'User not authenticated'}, status=401)
+        return JsonResponse({'notifications': []})
     
-    notifications = Notification.objects.filter(user=request.user, is_read=False)[:5]
-    notifications_data = []
-    
-    for notification in notifications:
-        notifications_data.append({
-            'id': notification.id,
-            'title': notification.title,
-            'message': notification.message,
-            'type': notification.notification_type,
-            'is_read': notification.is_read,
-            'created_at': notification.created_at.isoformat(),
-            'url': notification.related_url,
-        })
-    
-    return JsonResponse({'notifications': notifications_data})
+    try:
+        notifications = Notification.objects.filter(user=request.user, is_read=False).order_by('-created_at')[:5]
+        notifications_data = []
+        
+        for notification in notifications:
+            notifications_data.append({
+                'id': notification.id,
+                'title': notification.title,
+                'message': notification.message,
+                'type': notification.notification_type,
+                'is_read': notification.is_read,
+                'created_at': notification.created_at.isoformat(),
+                'url': notification.related_url,
+            })
+        
+        return JsonResponse({'notifications': notifications_data})
+    except Exception as e:
+        return JsonResponse({'notifications': [], 'error': str(e)})
 
 
 class BlogFeedView(ListView):

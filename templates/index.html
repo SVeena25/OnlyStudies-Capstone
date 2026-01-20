@@ -159,7 +159,12 @@
         }
 
         fetch('{% url "notifications_api" %}')
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
             .then(data => {
                 if (data.notifications && data.notifications.length > 0) {
                     let html = '';
@@ -175,8 +180,8 @@
                 }
             })
             .catch(error => {
-                console.log('Notifications error:', error);
-                notificationsContainer.innerHTML = '<li class="notification-item"><em>Sign in to view notifications</em></li>';
+                console.error('Notifications error:', error);
+                notificationsContainer.innerHTML = '<li class="notification-item"><em>Unable to load notifications</em></li>';
             });
     }
 
