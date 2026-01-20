@@ -40,6 +40,4 @@ urlpatterns = [
     # API Endpoints
     path('api/blog-feed/', 
         views.blog_feed_api, name='blog_feed_api'),
-    path('api/notifications/', 
-        views.notifications_api, name='notifications_api'),
 ]

@@ -34,10 +34,19 @@
                     <div class="card h-100">
                         <div class="card-body">
                             <h5 class="card-title mb-3">Notifications</h5>
-                            <ul class="list-unstyled notification-list" id="notifications-container">
-                                <li class="notification-item"><em>Loading notifications...</em></li>
+                            <ul class="list-unstyled notification-list">
+                                {% if notifications %}
+                                    {% for notification in notifications %}
+                                    <li class="notification-item" title="{{ notification.message }}">
+                                        <strong>{{ notification.title }}</strong>
+                                        <small class="text-muted d-block">{{ notification.created_at|date:"M d, Y" }}</small>
+                                    </li>
+                                    {% endfor %}
+                                {% else %}
+                                    <li class="notification-item"><em>No new notifications</em></li>
+                                {% endif %}
                             </ul>
-                            <button id="view-updates-btn" class="btn btn-outline-dark btn-sm w-100 mt-2">View Updates</button>
+                            <a href="{% url 'home' %}" class="btn btn-outline-dark btn-sm w-100 mt-2">Refresh</a>
                         </div>
                     </div>
                 </div>
@@ -151,49 +160,8 @@
             });
     }
 
-    // Notifications loader (used on load + View Updates button)
-    function loadNotifications(showRefreshing = false) {
-        const notificationsContainer = document.getElementById('notifications-container');
-        if (showRefreshing) {
-            notificationsContainer.innerHTML = '<li class="notification-item"><em>Refreshing updates...</em></li>';
-        }
-
-        fetch('{% url "notifications_api" %}')
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.notifications && data.notifications.length > 0) {
-                    let html = '';
-                    data.notifications.forEach(notification => {
-                        html += `<li class="notification-item" title="${notification.message}">
-                            <strong>${notification.title}</strong>
-                            <small class="text-muted d-block">${new Date(notification.created_at).toLocaleDateString()}</small>
-                        </li>`;
-                    });
-                    notificationsContainer.innerHTML = html;
-                } else {
-                    notificationsContainer.innerHTML = '<li class="notification-item"><em>No new notifications</em></li>';
-                }
-            })
-            .catch(error => {
-                console.error('Notifications error:', error);
-                notificationsContainer.innerHTML = '<li class="notification-item"><em>Unable to load notifications</em></li>';
-            });
-    }
-
-    // Initial loads
+    // Initial load
     loadBlogFeed();
-    loadNotifications();
-
-    // Wire up View Updates button to refresh notifications
-    const viewUpdatesBtn = document.getElementById('view-updates-btn');
-    if (viewUpdatesBtn) {
-        viewUpdatesBtn.addEventListener('click', () => loadNotifications(true));
-    }
 </script>
 {% endblock %}
 

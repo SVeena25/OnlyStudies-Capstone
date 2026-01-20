@@ -15,9 +15,23 @@ from .models import Category, SubCategory, BlogPost, Notification, ForumQuestion
 
 class HomePage(TemplateView):
     """
-    Displays home page
+    Displays home page with blog feed and notifications
     """
     template_name = 'index.html'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        # Fetch notifications for authenticated users
+        if self.request.user.is_authenticated:
+            context['notifications'] = Notification.objects.filter(
+                user=self.request.user, 
+                is_read=False
+            ).order_by('-created_at')[:5]
+        else:
+            context['notifications'] = []
+        
+        return context
 
 
 class SearchResultsView(TemplateView):
@@ -159,34 +173,6 @@ def blog_feed_api(request):
         })
     
     return JsonResponse({'blogs': blog_data})
-
-
-def notifications_api(request):
-    """
-    API endpoint to fetch user notifications
-    Returns latest 5 unread notifications for logged-in user
-    """
-    if not request.user.is_authenticated:
-        return JsonResponse({'notifications': []})
-    
-    try:
-        notifications = Notification.objects.filter(user=request.user, is_read=False).order_by('-created_at')[:5]
-        notifications_data = []
-        
-        for notification in notifications:
-            notifications_data.append({
-                'id': notification.id,
-                'title': notification.title,
-                'message': notification.message,
-                'type': notification.notification_type,
-                'is_read': notification.is_read,
-                'created_at': notification.created_at.isoformat(),
-                'url': notification.related_url,
-            })
-        
-        return JsonResponse({'notifications': notifications_data})
-    except Exception as e:
-        return JsonResponse({'notifications': [], 'error': str(e)})
 
 
 class BlogFeedView(ListView):
