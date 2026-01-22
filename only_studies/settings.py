@@ -151,6 +151,9 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 # WhiteNoise configuration for efficient static file serving
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
+# Cache static files for 1 year (since they're cache-busted with hashes)
+WHITENOISE_MAX_AGE = 31536000  # 1 year in seconds
+
 # Media files (User uploads)
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
