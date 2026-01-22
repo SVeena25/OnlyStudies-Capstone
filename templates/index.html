@@ -24,7 +24,9 @@
                             <div id="blog-feed-container">
                                 <em class="text-muted">Loading blog posts...</em>
                             </div>
-                            <img src="{% static 'img/blog.png' %}" alt="Blog Feed" class="img-fluid rounded mt-3" style="width: 100%; object-fit: cover;">
+                            <div style="max-height: 300px; overflow: hidden; margin-top: 1rem;">
+                                <img src="{% static 'img/blog.png' %}" alt="Blog Feed" class="img-fluid rounded" style="width: 100%; object-fit: cover; object-position: top;">
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -34,13 +36,23 @@
                     <div class="card h-100">
                         <div class="card-body">
                             <h5 class="card-title mb-3">Notifications</h5>
-                            <div id="view-updates-alert" class="alert alert-info d-none" role="alert">
-                                Logged in users can view the updates on the home page.
-                            </div>
+                            {% if user.is_authenticated %}
+                                <div id="view-updates-alert" class="alert alert-info" role="alert">
+                                    You have new updates available!
+                                </div>
+                            {% else %}
+                                <div class="alert alert-warning" role="alert">
+                                    <em>Log in to view your notifications</em>
+                                </div>
+                            {% endif %}
                             <ul class="list-unstyled notification-list" id="notifications-container">
                                 <li class="notification-item"><em>Loading notifications...</em></li>
                             </ul>
-                            <a id="view-updates-btn" href="{% url 'home' %}" class="btn btn-dark btn-sm w-100 mt-2">View Updates</a>
+                            {% if user.is_authenticated %}
+                                <a id="view-updates-btn" href="{% url 'notifications' %}" class="btn btn-dark btn-sm w-100 mt-2">View Updates</a>
+                            {% else %}
+                                <a href="{% url 'login' %}" class="btn btn-dark btn-sm w-100 mt-2">Login to View Updates</a>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -154,56 +166,44 @@
             });
     }
 
-    // Notifications loader (used on load + View Updates button)
-    function loadNotifications(showRefreshing = false) {
+    // Notifications loader (for authenticated users)
+    function loadNotifications() {
         const notificationsContainer = document.getElementById('notifications-container');
-        if (showRefreshing) {
-            notificationsContainer.innerHTML = '<li class="notification-item"><em>Refreshing updates...</em></li>';
-        }
-
-        fetch('{% url "notifications_api" %}')
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.notifications && data.notifications.length > 0) {
-                    let html = '';
-                    data.notifications.forEach(notification => {
-                        html += `<li class="notification-item" title="${notification.message}">
-                            <strong>${notification.title}</strong>
-                            <small class="text-muted d-block">${new Date(notification.created_at).toLocaleDateString()}</small>
-                        </li>`;
-                    });
-                    notificationsContainer.innerHTML = html;
-                } else {
-                    notificationsContainer.innerHTML = '<li class="notification-item"><em>No new notifications</em></li>';
-                }
-            })
-            .catch(error => {
-                console.error('Notifications error:', error);
-                notificationsContainer.innerHTML = '<li class="notification-item"><em>Unable to load notifications</em></li>';
-            });
+        
+        {% if user.is_authenticated %}
+            fetch('{% url "notifications_api" %}')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.notifications && data.notifications.length > 0) {
+                        let html = '';
+                        data.notifications.forEach(notification => {
+                            html += `<li class="notification-item" title="${notification.message}">
+                                <strong>${notification.title}</strong>
+                                <small class="text-muted d-block">${new Date(notification.created_at).toLocaleDateString()}</small>
+                            </li>`;
+                        });
+                        notificationsContainer.innerHTML = html;
+                    } else {
+                        notificationsContainer.innerHTML = '<li class="notification-item"><em>No new notifications</em></li>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Notifications error:', error);
+                    notificationsContainer.innerHTML = '<li class="notification-item"><em>Unable to load notifications</em></li>';
+                });
+        {% else %}
+            notificationsContainer.innerHTML = '<li class="notification-item"><em>Log in to see your notifications</em></li>';
+        {% endif %}
     }
 
     // Initial loads
     loadBlogFeed();
     loadNotifications();
-
-    // Wire up View Updates button to show inline alert and refresh notifications
-    const viewUpdatesBtn = document.getElementById('view-updates-btn');
-    const viewUpdatesAlert = document.getElementById('view-updates-alert');
-    if (viewUpdatesBtn) {
-        viewUpdatesBtn.addEventListener('click', (event) => {
-            event.preventDefault();
-            if (viewUpdatesAlert) {
-                viewUpdatesAlert.classList.remove('d-none');
-            }
-            loadNotifications(true);
-        });
-    }
 </script>
 {% endblock %}
 
