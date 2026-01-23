@@ -226,6 +226,7 @@
 <script>
     // Blog Feed loader
     function loadBlogFeed() {
+        const blogPlaceholder = "{% static 'img/blog.png' %}";
         fetch('{% url "blog_feed_api" %}')
             .then(response => response.json())
             .then(data => {
@@ -233,10 +234,8 @@
                 if (data.blogs && data.blogs.length > 0) {
                     const blog = data.blogs[0];
                     let html = '<div class="blog-post">';
-                    
-                    if (blog.featured_image) {
-                        html += `<img src="${blog.featured_image}" alt="${blog.title}" class="img-fluid rounded mb-3" style="width: 100%; object-fit: cover; max-height: 300px;" width="1200" height="675" loading="lazy" decoding="async">`;
-                    }
+                    const imgSrc = blog.featured_image || blogPlaceholder;
+                    html += `<img src="${imgSrc}" alt="${blog.title}" class="img-fluid rounded mb-3" style="width: 100%; object-fit: cover; max-height: 300px;" width="1200" height="675" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='${blogPlaceholder}'">`;
                     
                     html += `<h6>${blog.title}</h6>`;
                     html += `<small class="text-muted">By ${blog.author} • ${new Date(blog.created_at).toLocaleDateString()}</small>`;

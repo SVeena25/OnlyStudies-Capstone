@@ -18,7 +18,7 @@
             <article class="blog-post">
                 <!-- Featured Image placed above title -->
                 {% if post.featured_image %}
-                    <img src="{{ post.featured_image.url }}" alt="{{ post.title }}" class="img-fluid rounded mb-4" style="width: 100%; max-height: 400px; object-fit: cover;" width="1200" height="675" loading="lazy" decoding="async">
+                    <img src="{{ post.featured_image.url }}" alt="{{ post.title }}" class="img-fluid rounded mb-4" style="width: 100%; max-height: 400px; object-fit: cover;" width="1200" height="675" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='{% static 'img/blog.png' %}'">
                 {% else %}
                     <div class="bg-light rounded mb-4 d-flex align-items-center justify-content-center" style="width: 100%; height: 300px; color: #999;">
                         <div class="text-center">
@@ -88,7 +88,7 @@
                         <div class="col-12 col-md-6">
                             <div class="card h-100 shadow-sm">
                                 {% if related_post.featured_image %}
-                                    <img src="{{ related_post.featured_image.url }}" class="card-img-top" alt="{{ related_post.title }}" style="height: 150px; object-fit: cover;" width="300" height="150" loading="lazy" decoding="async">
+                                    <img src="{{ related_post.featured_image.url }}" class="card-img-top" alt="{{ related_post.title }}" style="height: 150px; object-fit: cover;" width="300" height="150" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='{% static 'img/blog.png' %}'">
                                 {% else %}
                                     <div class="card-img-top bg-secondary d-flex align-items-center justify-content-center" style="height: 150px;">
                                         <i class="bi bi-file-text text-white" style="font-size: 2rem;"></i>

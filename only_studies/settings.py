@@ -53,7 +53,6 @@ INSTALLED_APPS = [
     'cloudinary_storage',
     'django.contrib.staticfiles',
     'cloudinary',
-    
     'django.contrib.sites',
     
     # Third-party auth apps

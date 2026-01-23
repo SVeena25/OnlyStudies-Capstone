@@ -15,7 +15,7 @@
                         <div class="col-12 col-md-6 col-lg-4">
                             <div class="card h-100 shadow-sm">
                                 {% if post.featured_image %}
-                                    <img src="{{ post.featured_image.url }}" alt="{{ post.title }}" class="card-img-top" style="height: 180px; object-fit: cover;" width="400" height="180" loading="lazy" decoding="async">
+                                    <img src="{{ post.featured_image.url }}" alt="{{ post.title }}" class="card-img-top" style="height: 180px; object-fit: cover;" width="400" height="180" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='{% static 'img/blog.png' %}'">
                                 {% else %}
                                     <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 180px; background-color: #f0f0f0;">
                                         <i class="bi bi-file-text text-secondary" style="font-size: 2.5rem;"></i>

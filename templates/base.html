@@ -16,8 +16,8 @@
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     
-    <!-- Minimal Bootstrap Icons (only used icons) -->
-    <link rel="stylesheet" href="{% static 'css/icons.min.css' %}">
+    <!-- Bootstrap Icons via CDN to avoid missing static asset in production -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     
     {% block extra_css %}{% endblock %}
 </head>
