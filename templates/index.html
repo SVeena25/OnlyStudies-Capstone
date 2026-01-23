@@ -89,11 +89,14 @@
                         <i class="bi bi-check-circle me-2"></i>View Tasks
                     </a>
                 {% else %}
-                    <a href="{% url 'signup' %}" class="btn btn-light">
-                        <i class="bi bi-person-plus me-2"></i>Sign Up
+                    <a href="{% url 'blog_feed' %}" class="btn btn-light">
+                        <i class="bi bi-newspaper me-2"></i>Explore Blog
                     </a>
-                    <a href="{% url 'login' %}" class="btn btn-outline-light">
-                        <i class="bi bi-box-arrow-in-right me-2"></i>Login
+                    <a href="{% url 'forum' %}" class="btn btn-light">
+                        <i class="bi bi-chat-dots me-2"></i>Browse Forum
+                    </a>
+                    <a href="{% url 'about' %}" class="btn btn-outline-light">
+                        <i class="bi bi-info-circle me-2"></i>About Us
                     </a>
                 {% endif %}
             </div>
