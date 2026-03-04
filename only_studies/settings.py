@@ -27,11 +27,12 @@ TEMPLATES_DIR = os.path.join(BASE_DIR, 'templates')
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('SECRET_KEY')
+SECRET_KEY = os.environ.get('SECRET_KEY', 'dev-insecure-secret-key-onlystudies')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-# Defaults to False for production safety; set DEBUG=True in env.py for local development
-DEBUG = os.environ.get('DEBUG', 'False').lower() == 'true'
+DEBUG = False
+
+database_url = os.environ.get("DATABASE_URL")
 
 # Allow local dev and common loopback hosts; add prod domains as needed
 ALLOWED_HOSTS = ["localhost", 
@@ -106,9 +107,17 @@ WSGI_APPLICATION = 'only_studies.wsgi.application'
 #         'NAME': BASE_DIR / 'db.sqlite3',
 #     }
 # }
-DATABASES = {
-   'default': dj_database_url.parse(os.environ.get("DATABASE_URL"))
-}
+if database_url:
+    DATABASES = {
+        'default': dj_database_url.parse(database_url)
+    }
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 
 

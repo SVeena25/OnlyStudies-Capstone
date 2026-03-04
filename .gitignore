@@ -18,3 +18,19 @@ db.sqlite3
 *.log
 
 env.py
+
+# Environment/secrets
+.env
+.env.*
+*.env
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+credentials.json
+service-account*.json
+
+# Runtime/generated folders
+staticfiles/
+media/
