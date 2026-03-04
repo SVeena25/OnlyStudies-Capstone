@@ -161,7 +161,7 @@ STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static'), ]
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 # WhiteNoise configuration for efficient static file serving
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+_staticfiles_backend = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Cache static files for 1 year (since they're cache-busted with hashes)
 WHITENOISE_MAX_AGE = 31536000  # 1 year in seconds
@@ -170,13 +170,30 @@ WHITENOISE_MAX_AGE = 31536000  # 1 year in seconds
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
-# Cloudinary Configuration for Media Storage
+# Django 5+ storage configuration
 if IS_PRODUCTION:
-    # Use Cloudinary for production media storage
-    DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+    has_cloudinary = bool(
+        os.environ.get('CLOUDINARY_URL') or (
+            os.environ.get('CLOUDINARY_CLOUD_NAME') and
+            os.environ.get('CLOUDINARY_API_KEY') and
+            os.environ.get('CLOUDINARY_API_SECRET')
+        )
+    )
+    if has_cloudinary:
+        _default_file_backend = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+    else:
+        _default_file_backend = 'django.core.files.storage.FileSystemStorage'
 else:
-    # Use local file storage for development
-    DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
+    _default_file_backend = 'django.core.files.storage.FileSystemStorage'
+
+STORAGES = {
+    'default': {
+        'BACKEND': _default_file_backend,
+    },
+    'staticfiles': {
+        'BACKEND': _staticfiles_backend,
+    },
+}
 
 
 # Default primary key field type
