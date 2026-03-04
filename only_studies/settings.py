@@ -161,7 +161,7 @@ STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static'), ]
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 # WhiteNoise configuration for efficient static file serving
-_staticfiles_backend = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+_staticfiles_backend = 'whitenoise.storage.CompressedStaticFilesStorage'
 
 # Cache static files for 1 year (since they're cache-busted with hashes)
 WHITENOISE_MAX_AGE = 31536000  # 1 year in seconds
