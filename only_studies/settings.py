@@ -33,6 +33,7 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'dev-insecure-secret-key-onlystudies')
 DEBUG = False
 
 database_url = os.environ.get("DATABASE_URL")
+IS_PRODUCTION = bool(os.environ.get('DYNO') or database_url)
 
 # Allow local dev and common loopback hosts; add prod domains as needed
 ALLOWED_HOSTS = ["localhost", 
@@ -170,7 +171,7 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Cloudinary Configuration for Media Storage
-if not DEBUG:
+if IS_PRODUCTION:
     # Use Cloudinary for production media storage
     DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 else:
@@ -204,13 +205,13 @@ ACCOUNT_SIGNUP_REDIRECT_URL = '/'
 # Security Settings for Production/Heroku
 # https://docs.djangoproject.com/en/4.2/topics/security/
 
-# Ensure HTTPS redirect is disabled in development
-if DEBUG:
+# Ensure HTTPS redirect is disabled outside production
+if not IS_PRODUCTION:
     SECURE_SSL_REDIRECT = False
     SESSION_COOKIE_SECURE = False
     CSRF_COOKIE_SECURE = False
 
-if not DEBUG:
+if IS_PRODUCTION:
     # SSL/HTTPS Configuration
     SECURE_SSL_REDIRECT = True
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
