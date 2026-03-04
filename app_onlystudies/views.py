@@ -652,6 +652,7 @@ class DeleteForumQuestionView(LoginRequiredMixin, IsAuthorMixin, DeleteView):
     model = ForumQuestion
     slug_field = 'slug'
     slug_url_kwarg = 'slug'
+    template_name = 'forumquestion_confirm_delete.html'
     success_url = reverse_lazy('forum')
     login_url = reverse_lazy('login')
     
@@ -668,6 +669,7 @@ class DeleteForumAnswerView(LoginRequiredMixin, IsAuthorMixin, DeleteView):
     """
     model = ForumAnswer
     pk_url_kwarg = 'answer_id'
+    template_name = 'forumanswer_confirm_delete.html'
     login_url = reverse_lazy('login')
     
     def get_success_url(self):
@@ -688,6 +690,7 @@ class DeleteBlogPostView(LoginRequiredMixin, IsAuthorMixin, DeleteView):
     model = BlogPost
     slug_field = 'slug'
     slug_url_kwarg = 'slug'
+    template_name = 'blogpost_confirm_delete.html'
     success_url = reverse_lazy('blog_feed')
     login_url = reverse_lazy('login')
     

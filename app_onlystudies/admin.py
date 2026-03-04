@@ -1,5 +1,7 @@
 from django.contrib import admin
+from django.contrib import messages
 from .models import Category, SubCategory, BlogPost, Notification, ForumQuestion, ForumAnswer, Task, Appointment
+from cloudinary.exceptions import Error as CloudinaryError
 
 
 class SubCategoryInline(admin.TabularInline):
@@ -54,6 +56,25 @@ class BlogPostAdmin(admin.ModelAdmin):
         if obj:  # Editing existing object
             fields.extend(['created_at', 'updated_at'])
         return fields
+
+    def save_model(self, request, obj, form, change):
+        original_image = None
+        if change:
+            try:
+                original_image = BlogPost.objects.only('featured_image').get(pk=obj.pk).featured_image
+            except BlogPost.DoesNotExist:
+                original_image = None
+
+        try:
+            super().save_model(request, obj, form, change)
+        except CloudinaryError:
+            obj.featured_image = original_image
+            obj.save()
+            self.message_user(
+                request,
+                'Post details were saved, but image upload failed. Please verify Cloudinary credentials.',
+                level=messages.WARNING,
+            )
 
 
 @admin.register(Notification)
