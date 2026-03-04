@@ -10,6 +10,7 @@ from django.urls import reverse_lazy
 from django.views.decorators.http import require_http_methods
 from django.http import HttpResponse, JsonResponse
 from django.core.exceptions import PermissionDenied
+from django.conf import settings
 from .forms import SignUpForm, ForumQuestionForm, ForumAnswerForm, AppointmentForm, BlogPostForm, TaskForm
 from .models import Category, SubCategory, BlogPost, Notification, ForumQuestion, ForumAnswer, Task, Appointment
 
@@ -231,13 +232,17 @@ def blog_feed_api(request):
     blog_data = []
     
     for post in blog_posts:
+        featured_image_url = post.featured_image.url if post.featured_image else None
+        if featured_image_url and getattr(settings, 'IS_PRODUCTION', False) and featured_image_url.startswith('/media/'):
+            featured_image_url = '/static/img/blog.png'
+
         blog_data.append({
             'id': post.id,
             'title': post.title,
             'content': post.content[:200],  # First 200 characters
             'author': post.author.get_full_name() or post.author.username,
             'category': post.category.name if post.category else 'General',
-            'featured_image': post.featured_image.url if post.featured_image else None,
+            'featured_image': featured_image_url,
             'created_at': post.created_at.isoformat(),
             'slug': post.slug,
         })
@@ -303,6 +308,7 @@ class BlogFeedView(ListView):
         """Add additional context"""
         context = super().get_context_data(**kwargs)
         context['page_title'] = 'Blog Feed'
+        context['is_production'] = getattr(settings, 'IS_PRODUCTION', False)
         return context
 
 
@@ -324,6 +330,7 @@ class BlogPostDetailView(DetailView):
         """Add additional context"""
         context = super().get_context_data(**kwargs)
         context['page_title'] = context['post'].title
+        context['is_production'] = getattr(settings, 'IS_PRODUCTION', False)
         
         # Get related posts from the same category (exclude current post)
         post = context['post']
