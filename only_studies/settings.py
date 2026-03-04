@@ -195,6 +195,10 @@ STORAGES = {
     },
 }
 
+# Backward compatibility for third-party packages expecting legacy settings
+DEFAULT_FILE_STORAGE = _default_file_backend
+STATICFILES_STORAGE = _staticfiles_backend
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
