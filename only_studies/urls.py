@@ -25,9 +25,12 @@ urlpatterns = [
     path('', include('app_onlystudies.urls'), name='home'),
 ]
 
+static_root = settings.STATICFILES_DIRS[0] if settings.STATICFILES_DIRS else settings.STATIC_ROOT
+urlpatterns += [
+    re_path(r'^static/(?P<path>.*)$', serve, {'document_root': static_root}),
+]
+
 if not getattr(settings, 'IS_PRODUCTION', False):
-    static_root = settings.STATICFILES_DIRS[0] if settings.STATICFILES_DIRS else settings.STATIC_ROOT
     urlpatterns += [
-        re_path(r'^static/(?P<path>.*)$', serve, {'document_root': static_root}),
         re_path(r'^media/(?P<path>.*)$', serve, {'document_root': settings.MEDIA_ROOT}),
     ]
