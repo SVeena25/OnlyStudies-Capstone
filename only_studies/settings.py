@@ -12,8 +12,9 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 
 from pathlib import Path
 import os
-from urllib.parse import urlparse, unquote
 import dj_database_url
+from urllib.parse import urlparse, unquote
+import cloudinary
 
 if os.path.isfile("env.py"):
    import env
@@ -28,13 +29,14 @@ TEMPLATES_DIR = os.path.join(BASE_DIR, 'templates')
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
+# Local fallback keeps development usable when environment variables are missing.
 SECRET_KEY = os.environ.get('SECRET_KEY', 'dev-insecure-secret-key-onlystudies')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = str(os.environ.get('DEBUG', 'False')).strip().lower() in {'1', 'true', 'yes', 'on'}
 
 database_url = os.environ.get("DATABASE_URL")
-IS_PRODUCTION = bool(os.environ.get('DYNO') or database_url)
+IS_PRODUCTION = bool(os.environ.get('DYNO'))
 
 # Allow local dev and common loopback hosts; add prod domains as needed
 ALLOWED_HOSTS = ["localhost", 
@@ -103,23 +105,9 @@ WSGI_APPLICATION = 'only_studies.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
-#     }
-# }
-if database_url:
-    DATABASES = {
-        'default': dj_database_url.parse(database_url)
-    }
-else:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-        }
-    }
+DATABASES = {
+   'default': dj_database_url.parse(os.environ.get("DATABASE_URL"))
+}
 
 
 
@@ -195,6 +183,14 @@ if has_cloudinary:
         'API_KEY': cloudinary_api_key,
         'API_SECRET': cloudinary_api_secret,
     }
+
+    cloudinary.config(
+        cloud_name=cloudinary_cloud_name,
+        api_key=cloudinary_api_key,
+        api_secret=cloudinary_api_secret,
+        secure=IS_PRODUCTION,
+    )
+
     if IS_PRODUCTION:
         # Force HTTPS URLs to avoid mixed-content issues in production.
         CLOUDINARY_STORAGE['SECURE'] = True

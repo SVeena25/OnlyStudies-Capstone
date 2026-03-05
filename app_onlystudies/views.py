@@ -12,6 +12,7 @@ from django.http import HttpResponse, JsonResponse
 from django.core.exceptions import PermissionDenied
 from django.conf import settings
 from cloudinary.exceptions import Error as CloudinaryError
+from cloudinary import uploader
 from .forms import SignUpForm, ForumQuestionForm, ForumAnswerForm, AppointmentForm, BlogPostForm, TaskForm
 from .models import Category, SubCategory, BlogPost, Notification, ForumQuestion, ForumAnswer, Task, Appointment
 
@@ -24,10 +25,21 @@ def _safe_blog_image_url(image_field):
 
     image_name = getattr(image_field, 'name', '') or ''
 
+    # Legacy rows may store a direct URL string instead of a storage key.
+    if image_name.startswith('http://') or image_name.startswith('https://'):
+        return image_name
+
     try:
         image_url = image_field.url
     except Exception:
         image_url = ''
+
+    # Some invalid values are rendered as /media/https://... by storage backends.
+    # Prefer the original absolute URL when available.
+    if image_url.startswith('/media/http://') or image_url.startswith('/media/https://'):
+        if image_name.startswith('http://') or image_name.startswith('https://'):
+            return image_name
+        return fallback
 
     is_production = getattr(settings, 'IS_PRODUCTION', False)
     has_cloudinary_storage = getattr(settings, 'HAS_CLOUDINARY_STORAGE', False)
@@ -594,7 +606,29 @@ class UpdateBlogPostView(LoginRequiredMixin, IsAuthorMixin, UpdateView):
     login_url = reverse_lazy('login')
     
     def form_valid(self, form):
-        """Update the blog post and handle Cloudinary failures gracefully"""
+        """Update the blog post and optionally import image from Cloudinary link."""
+        cloudinary_image_link = (form.cleaned_data.get('cloudinary_image_link') or '').strip()
+
+        if cloudinary_image_link:
+            try:
+                upload_result = uploader.upload(cloudinary_image_link, folder='blog')
+                public_id = upload_result.get('public_id')
+                if public_id:
+                    form.instance.featured_image = public_id
+            except Exception as exc:
+                # Keep existing image if link import fails, but still save text fields.
+                self.object = self.get_object()
+                self.object.title = form.cleaned_data['title']
+                self.object.content = form.cleaned_data['content']
+                self.object.category = form.cleaned_data.get('category')
+                self.object.is_published = form.cleaned_data.get('is_published', False)
+                self.object.save(update_fields=['title', 'content', 'category', 'is_published', 'updated_at'])
+                messages.warning(
+                    self.request,
+                    f'Post updated, but Cloudinary image import failed: {exc}'
+                )
+                return redirect(self.get_success_url())
+
         try:
             response = super().form_valid(form)
             messages.success(self.request, 'Your blog post has been updated successfully!')
@@ -611,6 +645,12 @@ class UpdateBlogPostView(LoginRequiredMixin, IsAuthorMixin, UpdateView):
                 'Your post was updated, but the new image could not be uploaded. The previous image was kept.'
             )
             return redirect(self.get_success_url())
+
+    def get_context_data(self, **kwargs):
+        """Provide a safe preview URL for the current featured image."""
+        context = super().get_context_data(**kwargs)
+        context['current_image_url'] = _safe_blog_image_url(self.object.featured_image)
+        return context
     
     def get_success_url(self):
         """Redirect to the blog post detail page"""

@@ -9,10 +9,10 @@ from cloudinary import uploader
 
 class BlogPostAdminForm(forms.ModelForm):
     """Admin-only helper field to import a remote image into Cloudinary."""
-    external_image_url = forms.URLField(
+    cloudinary_image_link = forms.URLField(
         required=False,
-        label='External Image URL',
-        help_text='Paste a public image URL to import it into Cloudinary automatically.',
+        label='Cloudinary Image Link',
+        help_text='Paste a public image URL to import it into Cloudinary. Leave empty to use the Choose file upload below.',
         widget=forms.URLInput(attrs={'placeholder': 'https://example.com/image.jpg'}),
     )
 
@@ -64,7 +64,7 @@ class BlogPostAdmin(admin.ModelAdmin):
     search_fields = ('title', 'content', 'author__username')
     readonly_fields = ('created_at', 'updated_at')
     
-    fields = ('title', 'slug', 'author', 'category', 'content', 'external_image_url', 'featured_image', 'is_published')
+    fields = ('title', 'slug', 'author', 'category', 'content', 'cloudinary_image_link', 'featured_image', 'is_published')
     
     def get_fields(self, request, obj=None):
         """
@@ -83,8 +83,19 @@ class BlogPostAdmin(admin.ModelAdmin):
             except BlogPost.DoesNotExist:
                 original_image = None
 
-        external_image_url = (form.cleaned_data.get('external_image_url') or '').strip()
-        if external_image_url:
+        cloudinary_image_link = (form.cleaned_data.get('cloudinary_image_link') or '').strip()
+        has_uploaded_file = 'featured_image' in request.FILES
+
+        # If both are provided, prefer the uploaded file and skip remote fetch.
+        if has_uploaded_file and cloudinary_image_link:
+            self.message_user(
+                request,
+                'Both Cloudinary Image Link and Choose file were provided. Using the uploaded file.',
+                level=messages.INFO,
+            )
+            cloudinary_image_link = ''
+
+        if cloudinary_image_link:
             cloudinary_config = getattr(settings, 'CLOUDINARY_STORAGE', {})
             cloudinary_values = [
                 str(cloudinary_config.get('CLOUD_NAME', '')),
@@ -104,7 +115,7 @@ class BlogPostAdmin(admin.ModelAdmin):
 
             try:
                 # Let Cloudinary fetch and store the remote image, then persist public_id.
-                upload_result = uploader.upload(external_image_url, folder='blog')
+                upload_result = uploader.upload(cloudinary_image_link, folder='blog')
                 public_id = upload_result.get('public_id')
                 if public_id:
                     obj.featured_image = public_id

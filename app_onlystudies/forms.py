@@ -197,9 +197,19 @@ class BlogPostForm(forms.ModelForm):
     """
     Form for creating and updating blog posts
     """
+    cloudinary_image_link = forms.URLField(
+        required=False,
+        label='Cloudinary Image Link',
+        help_text='Paste a public image URL to import into Cloudinary.',
+        widget=forms.URLInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'https://example.com/image.jpg'
+        })
+    )
+
     class Meta:
         model = BlogPost
-        fields = ('title', 'content', 'category', 'featured_image', 'is_published')
+        fields = ('title', 'content', 'category', 'is_published')
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -214,10 +224,6 @@ class BlogPostForm(forms.ModelForm):
             }),
             'category': forms.Select(attrs={
                 'class': 'form-control'
-            }),
-            'featured_image': forms.FileInput(attrs={
-                'class': 'form-control',
-                'accept': 'image/*'
             }),
             'is_published': forms.CheckboxInput(attrs={
                 'class': 'form-check-input'

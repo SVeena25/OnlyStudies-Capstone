@@ -21,7 +21,7 @@
                         {% endfor %}
                     {% endif %}
 
-                    <form method="post" enctype="multipart/form-data">
+                    <form method="post">
                         {% csrf_token %}
                         
                         <div class="mb-3">
@@ -49,22 +49,22 @@
                         </div>
 
                         <div class="mb-3">
-                            <label for="{{ form.featured_image.id_for_label }}" class="form-label">Featured Image</label>
-                            {% if object.featured_image %}
+                            <label for="{{ form.cloudinary_image_link.id_for_label }}" class="form-label">Cloudinary Image Link</label>
+                            {% if current_image_url %}
                                 <div class="mb-2">
-                                    <img src="{{ object.featured_image.url }}" alt="{{ object.title }}" class="img-fluid rounded" style="max-width: 300px; max-height: 200px; object-fit: cover;">
-                                    <p class="text-muted mt-2"><small>Current image. Upload a new one to replace it.</small></p>
+                                    <img src="{{ current_image_url }}" alt="{{ object.title }}" class="img-fluid rounded" style="max-width: 300px; max-height: 200px; object-fit: cover;" onerror="this.onerror=null;this.src='{% static 'img/blog.png' %}'">
+                                    <p class="text-muted mt-2"><small>Current image. Add a link below to replace it.</small></p>
                                 </div>
                             {% endif %}
-                            {{ form.featured_image }}
-                            {% if form.featured_image.errors %}
+                            {{ form.cloudinary_image_link }}
+                            {% if form.cloudinary_image_link.errors %}
                                 <div class="text-danger">
-                                    {% for error in form.featured_image.errors %}
+                                    {% for error in form.cloudinary_image_link.errors %}
                                         <small>{{ error }}</small>
                                     {% endfor %}
                                 </div>
                             {% endif %}
-                            <small class="form-text text-muted">Optional. Max file size: 5MB</small>
+                            <small class="form-text text-muted">Optional. Paste a direct public image URL.</small>
                         </div>
 
                         <div class="mb-3">
