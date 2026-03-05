@@ -11,6 +11,7 @@ from django.views.decorators.http import require_http_methods
 from django.http import HttpResponse, JsonResponse
 from django.core.exceptions import PermissionDenied
 from django.conf import settings
+from cloudinary.exceptions import Error as CloudinaryError
 from .forms import SignUpForm, ForumQuestionForm, ForumAnswerForm, AppointmentForm, BlogPostForm, TaskForm
 from .models import Category, SubCategory, BlogPost, Notification, ForumQuestion, ForumAnswer, Task, Appointment
 
@@ -524,9 +525,24 @@ class UpdateBlogPostView(LoginRequiredMixin, IsAuthorMixin, UpdateView):
     login_url = reverse_lazy('login')
     
     def form_valid(self, form):
-        """Update the blog post and show success message"""
-        messages.success(self.request, 'Your blog post has been updated successfully!')
-        return super().form_valid(form)
+        """Update the blog post and handle Cloudinary failures gracefully"""
+        try:
+            response = super().form_valid(form)
+            messages.success(self.request, 'Your blog post has been updated successfully!')
+            return response
+        except CloudinaryError:
+            existing_post = self.get_object()
+            existing_image = existing_post.featured_image
+
+            if 'featured_image' in form.changed_data:
+                form.instance.featured_image = existing_image
+
+            self.object = form.save()
+            messages.warning(
+                self.request,
+                'Your post was updated, but the new image could not be uploaded. The previous image was kept.'
+            )
+            return redirect(self.get_success_url())
     
     def get_success_url(self):
         """Redirect to the blog post detail page"""
