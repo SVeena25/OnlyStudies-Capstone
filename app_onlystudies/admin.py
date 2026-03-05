@@ -1,7 +1,24 @@
+from django import forms
 from django.contrib import admin
 from django.contrib import messages
+from django.conf import settings
 from .models import Category, SubCategory, BlogPost, Notification, ForumQuestion, ForumAnswer, Task, Appointment
 from cloudinary.exceptions import Error as CloudinaryError
+from cloudinary import uploader
+
+
+class BlogPostAdminForm(forms.ModelForm):
+    """Admin-only helper field to import a remote image into Cloudinary."""
+    external_image_url = forms.URLField(
+        required=False,
+        label='External Image URL',
+        help_text='Paste a public image URL to import it into Cloudinary automatically.',
+        widget=forms.URLInput(attrs={'placeholder': 'https://example.com/image.jpg'}),
+    )
+
+    class Meta:
+        model = BlogPost
+        fields = '__all__'
 
 
 class SubCategoryInline(admin.TabularInline):
@@ -40,13 +57,14 @@ class BlogPostAdmin(admin.ModelAdmin):
     """
     Admin for BlogPost model
     """
+    form = BlogPostAdminForm
     list_display = ('title', 'author', 'category', 'is_published', 'created_at')
     list_filter = ('is_published', 'category', 'created_at')
     prepopulated_fields = {'slug': ('title',)}
     search_fields = ('title', 'content', 'author__username')
     readonly_fields = ('created_at', 'updated_at')
     
-    fields = ('title', 'slug', 'author', 'category', 'content', 'featured_image', 'is_published')
+    fields = ('title', 'slug', 'author', 'category', 'content', 'external_image_url', 'featured_image', 'is_published')
     
     def get_fields(self, request, obj=None):
         """
@@ -64,6 +82,38 @@ class BlogPostAdmin(admin.ModelAdmin):
                 original_image = BlogPost.objects.only('featured_image').get(pk=obj.pk).featured_image
             except BlogPost.DoesNotExist:
                 original_image = None
+
+        external_image_url = (form.cleaned_data.get('external_image_url') or '').strip()
+        if external_image_url:
+            cloudinary_config = getattr(settings, 'CLOUDINARY_STORAGE', {})
+            cloudinary_values = [
+                str(cloudinary_config.get('CLOUD_NAME', '')),
+                str(cloudinary_config.get('API_KEY', '')),
+                str(cloudinary_config.get('API_SECRET', '')),
+                str(getattr(settings, 'CLOUDINARY_URL', '')),
+            ]
+            has_placeholder_credentials = any('<' in value and '>' in value for value in cloudinary_values if value)
+
+            if has_placeholder_credentials:
+                self.message_user(
+                    request,
+                    'Cloudinary credentials look like placeholders. Update CLOUDINARY_URL or split Cloudinary env vars before importing external images.',
+                    level=messages.WARNING,
+                )
+                return super().save_model(request, obj, form, change)
+
+            try:
+                # Let Cloudinary fetch and store the remote image, then persist public_id.
+                upload_result = uploader.upload(external_image_url, folder='blog')
+                public_id = upload_result.get('public_id')
+                if public_id:
+                    obj.featured_image = public_id
+            except Exception as exc:
+                self.message_user(
+                    request,
+                    f'External image import failed: {exc}',
+                    level=messages.WARNING,
+                )
 
         try:
             super().save_model(request, obj, form, change)

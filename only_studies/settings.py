@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 
 from pathlib import Path
 import os
+from urllib.parse import urlparse, unquote
 import dj_database_url
 
 if os.path.isfile("env.py"):
@@ -170,25 +171,38 @@ WHITENOISE_MAX_AGE = 31536000  # 1 year in seconds
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
-# Django 5+ storage configuration
-if IS_PRODUCTION:
-    has_cloudinary = bool(
-        os.environ.get('CLOUDINARY_URL') or (
-            os.environ.get('CLOUDINARY_CLOUD_NAME') and
-            os.environ.get('CLOUDINARY_API_KEY') and
-            os.environ.get('CLOUDINARY_API_SECRET')
-        )
-    )
-    if has_cloudinary:
-        CLOUDINARY_STORAGE = {
-            # Force HTTPS URLs to avoid mixed-content issues in production.
-            'SECURE': True,
-        }
-        _default_file_backend = 'cloudinary_storage.storage.MediaCloudinaryStorage'
-    else:
-        _default_file_backend = 'django.core.files.storage.FileSystemStorage'
+# Cloudinary credentials for both storage backend and direct uploader usage.
+cloudinary_url = (os.environ.get('CLOUDINARY_URL') or '').strip()
+cloudinary_cloud_name = (os.environ.get('CLOUDINARY_CLOUD_NAME') or '').strip()
+cloudinary_api_key = (os.environ.get('CLOUDINARY_API_KEY') or '').strip()
+cloudinary_api_secret = (os.environ.get('CLOUDINARY_API_SECRET') or '').strip()
+
+# URL-based config or split credentials both supported.
+has_cloudinary = bool(
+    cloudinary_url or
+    (cloudinary_cloud_name and cloudinary_api_key and cloudinary_api_secret)
+)
+
+if has_cloudinary:
+    if cloudinary_url and not (cloudinary_cloud_name and cloudinary_api_key and cloudinary_api_secret):
+        parsed = urlparse(cloudinary_url)
+        cloudinary_cloud_name = (parsed.hostname or '').strip()
+        cloudinary_api_key = unquote(parsed.username or '').strip()
+        cloudinary_api_secret = unquote(parsed.password or '').strip()
+
+    CLOUDINARY_STORAGE = {
+        'CLOUD_NAME': cloudinary_cloud_name,
+        'API_KEY': cloudinary_api_key,
+        'API_SECRET': cloudinary_api_secret,
+    }
+    if IS_PRODUCTION:
+        # Force HTTPS URLs to avoid mixed-content issues in production.
+        CLOUDINARY_STORAGE['SECURE'] = True
+
+    # Expose for admin validation logic and any other settings consumers.
+    CLOUDINARY_URL = cloudinary_url
+    _default_file_backend = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 else:
-    has_cloudinary = False
     _default_file_backend = 'django.core.files.storage.FileSystemStorage'
 
 # Exposed for templates/views that need to decide media fallbacks.
