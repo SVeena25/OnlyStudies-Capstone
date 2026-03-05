@@ -22,38 +22,58 @@ def _safe_blog_image_url(image_field):
     if not image_field:
         return None
 
+    image_name = getattr(image_field, 'name', '') or ''
+
     try:
         image_url = image_field.url
     except Exception:
-        return fallback
+        image_url = ''
 
     is_production = getattr(settings, 'IS_PRODUCTION', False)
     has_cloudinary_storage = getattr(settings, 'HAS_CLOUDINARY_STORAGE', False)
 
     if is_production:
+        # Legacy DB rows can still store local media paths like "blog/logo.png".
+        # In production those files are unavailable, so prefer matching static assets.
+        if image_name.startswith('blog/'):
+            filename = image_name.rsplit('/', 1)[-1]
+            if filename:
+                return f'/static/img/{filename}'
+
         # In production, avoid broken local-media paths and non-Cloudinary remote URLs.
         if image_url.startswith('/media/'):
+            filename = image_url.rsplit('/', 1)[-1]
+            if filename:
+                return f'/static/img/{filename}'
             return fallback
         if not has_cloudinary_storage:
             return fallback
         if 'res.cloudinary.com/' not in image_url:
             return fallback
 
-    return image_url
+    return image_url or fallback
 
 
 class HomePage(TemplateView):
     """
     Displays home page
     """
-    template_name = 'index.html'
+    template_name = 'core/index.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        posts = BlogPost.objects.filter(is_published=True).select_related('author', 'category')[:6]
+        for post in posts:
+            post.display_image_url = _safe_blog_image_url(post.featured_image)
+        context['home_blog_posts'] = posts
+        return context
 
 
 class AboutView(TemplateView):
     """
     Displays about page
     """
-    template_name = 'about.html'
+    template_name = 'core/about.html'
 
 
 class TaskListView(LoginRequiredMixin, ListView):
@@ -61,7 +81,7 @@ class TaskListView(LoginRequiredMixin, ListView):
     List view for tasks with filtering and sorting by due date, priority, and category.
     """
     model = Task
-    template_name = 'tasks.html'
+    template_name = 'tasks/tasks.html'
     context_object_name = 'tasks'
     paginate_by = 20
     login_url = reverse_lazy('login')
@@ -131,7 +151,7 @@ class CreateTaskView(LoginRequiredMixin, CreateView):
     """
     model = Task
     form_class = TaskForm
-    template_name = 'create_task.html'
+    template_name = 'tasks/create_task.html'
     login_url = reverse_lazy('login')
 
     def form_valid(self, form):
@@ -150,7 +170,7 @@ class DeleteTaskView(LoginRequiredMixin, DeleteView):
     """
     model = Task
     pk_url_kwarg = 'pk'
-    template_name = 'task_confirm_delete.html'
+    template_name = 'tasks/task_confirm_delete.html'
     success_url = reverse_lazy('tasks')
     login_url = reverse_lazy('login')
 
@@ -170,7 +190,7 @@ class SearchResultsView(TemplateView):
     """
     Simple search across blog posts and forum questions
     """
-    template_name = 'search_results.html'
+    template_name = 'core/search_results.html'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -202,7 +222,7 @@ class SignUpView(CreateView):
     """
     model = User
     form_class = SignUpForm
-    template_name = 'signup.html'
+    template_name = 'core/signup.html'
     success_url = reverse_lazy('home')
 
     def form_valid(self, form):
@@ -232,7 +252,7 @@ class CustomLoginView(LoginView):
     """
     Custom login view with security features
     """
-    template_name = 'login.html'
+    template_name = 'core/login.html'
     redirect_authenticated_user = True
     success_url = reverse_lazy('home')
 
@@ -254,7 +274,7 @@ class CategoryView(TemplateView):
     """
     Display content filtered by category
     """
-    template_name = 'category.html'
+    template_name = 'categories/category.html'
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -273,7 +293,7 @@ class SubCategoryView(TemplateView):
     """
     Display content filtered by subcategory
     """
-    template_name = 'subcategory.html'
+    template_name = 'categories/subcategory.html'
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -300,9 +320,7 @@ def blog_feed_api(request):
     blog_data = []
     
     for post in blog_posts:
-        featured_image_url = post.featured_image.url if post.featured_image else None
-        if featured_image_url and getattr(settings, 'IS_PRODUCTION', False) and featured_image_url.startswith('/media/'):
-            featured_image_url = '/static/img/blog.png'
+        featured_image_url = _safe_blog_image_url(post.featured_image)
 
         blog_data.append({
             'id': post.id,
@@ -350,7 +368,7 @@ def notifications_api(request):
 class NotificationsView(LoginRequiredMixin, ListView):
     """Full notifications list for the current user"""
     model = Notification
-    template_name = 'notifications.html'
+    template_name = 'notifications/notifications.html'
     context_object_name = 'notifications'
     paginate_by = 20
 
@@ -358,39 +376,12 @@ class NotificationsView(LoginRequiredMixin, ListView):
         return Notification.objects.filter(user=self.request.user).order_by('-created_at')
 
 
-class BlogFeedView(ListView):
-    """
-    View for displaying blog feed
-    Shows all published blog posts
-    """
-    model = BlogPost
-    template_name = 'blog_feed.html'
-    context_object_name = 'blog_posts'
-    paginate_by = 10
-    
-    def get_queryset(self):
-        """Return only published blog posts"""
-        return BlogPost.objects.filter(is_published=True).select_related('author', 'category')
-    
-    def get_context_data(self, **kwargs):
-        """Add additional context"""
-        context = super().get_context_data(**kwargs)
-        context['page_title'] = 'Blog Feed'
-        context['is_production'] = getattr(settings, 'IS_PRODUCTION', False)
-        context['has_cloudinary_storage'] = getattr(settings, 'HAS_CLOUDINARY_STORAGE', False)
-
-        for post in context['blog_posts']:
-            post.display_image_url = _safe_blog_image_url(post.featured_image)
-
-        return context
-
-
 class BlogPostDetailView(DetailView):
     """
     View for displaying a single blog post
     """
     model = BlogPost
-    template_name = 'blog_detail.html'
+    template_name = 'blog/blog_detail.html'
     context_object_name = 'post'
     slug_field = 'slug'
     slug_url_kwarg = 'slug'
@@ -427,7 +418,7 @@ class ForumView(ListView):
     View for displaying forum questions
     """
     model = ForumQuestion
-    template_name = 'forum.html'
+    template_name = 'forum/forum.html'
     context_object_name = 'questions'
     paginate_by = 15
     
@@ -448,7 +439,7 @@ class ForumQuestionDetailView(DetailView):
     View for displaying a single forum question with answers
     """
     model = ForumQuestion
-    template_name = 'forum_question.html'
+    template_name = 'forum/forum_question.html'
     context_object_name = 'question'
     
     def get_object(self):
@@ -473,7 +464,7 @@ class AskQuestionView(LoginRequiredMixin, CreateView):
     """
     model = ForumQuestion
     form_class = ForumQuestionForm
-    template_name = 'ask_question.html'
+    template_name = 'forum/ask_question.html'
     login_url = reverse_lazy('login')
     
     def form_valid(self, form):
@@ -498,7 +489,7 @@ class AppointmentListView(LoginRequiredMixin, ListView):
     List all appointments for the current user.
     """
     model = Appointment
-    template_name = 'appointments.html'
+    template_name = 'appointments/appointments.html'
     context_object_name = 'appointments'
     paginate_by = 20
     login_url = reverse_lazy('login')
@@ -518,7 +509,7 @@ class AppointmentCreateView(LoginRequiredMixin, CreateView):
     """
     model = Appointment
     form_class = AppointmentForm
-    template_name = 'book_appointment.html'
+    template_name = 'appointments/book_appointment.html'
     login_url = reverse_lazy('login')
 
     def form_valid(self, form):
@@ -569,7 +560,7 @@ def apply_exam(request, exam_name):
         'exam_name': exam_name.replace('-', ' ').title(),
         'page_title': f'Apply for {exam_name.replace("-", " ").title()}'
     }
-    return render(request, 'apply_exam.html', context)
+    return render(request, 'core/apply_exam.html', context)
 
 
 class IsAuthorMixin(UserPassesTestMixin):
@@ -597,7 +588,7 @@ class UpdateBlogPostView(LoginRequiredMixin, IsAuthorMixin, UpdateView):
     """
     model = BlogPost
     form_class = BlogPostForm
-    template_name = 'edit_blog_post.html'
+    template_name = 'blog/edit_blog_post.html'
     slug_field = 'slug'
     slug_url_kwarg = 'slug'
     login_url = reverse_lazy('login')
@@ -633,7 +624,7 @@ class UpdateForumQuestionView(LoginRequiredMixin, IsAuthorMixin, UpdateView):
     """
     model = ForumQuestion
     form_class = ForumQuestionForm
-    template_name = 'edit_forum_question.html'
+    template_name = 'forum/edit_forum_question.html'
     slug_field = 'slug'
     slug_url_kwarg = 'slug'
     login_url = reverse_lazy('login')
@@ -655,7 +646,7 @@ class UpdateForumAnswerView(LoginRequiredMixin, UserPassesTestMixin, UpdateView)
     """
     model = ForumAnswer
     form_class = ForumAnswerForm
-    template_name = 'edit_forum_answer.html'
+    template_name = 'forum/edit_forum_answer.html'
     pk_url_kwarg = 'answer_id'
     login_url = reverse_lazy('login')
     
@@ -686,7 +677,7 @@ class UpdateTaskView(LoginRequiredMixin, UpdateView):
     """
     model = Task
     form_class = TaskForm
-    template_name = 'edit_task.html'
+    template_name = 'tasks/edit_task.html'
     pk_url_kwarg = 'pk'
     login_url = reverse_lazy('login')
     
@@ -720,7 +711,7 @@ class UpdateAppointmentView(LoginRequiredMixin, UpdateView):
     """
     model = Appointment
     form_class = AppointmentForm
-    template_name = 'edit_appointment.html'
+    template_name = 'appointments/edit_appointment.html'
     pk_url_kwarg = 'pk'
     login_url = reverse_lazy('login')
     
@@ -750,7 +741,7 @@ class DeleteForumQuestionView(LoginRequiredMixin, IsAuthorMixin, DeleteView):
     model = ForumQuestion
     slug_field = 'slug'
     slug_url_kwarg = 'slug'
-    template_name = 'forumquestion_confirm_delete.html'
+    template_name = 'forum/forumquestion_confirm_delete.html'
     success_url = reverse_lazy('forum')
     login_url = reverse_lazy('login')
     
@@ -767,7 +758,7 @@ class DeleteForumAnswerView(LoginRequiredMixin, IsAuthorMixin, DeleteView):
     """
     model = ForumAnswer
     pk_url_kwarg = 'answer_id'
-    template_name = 'forumanswer_confirm_delete.html'
+    template_name = 'forum/forumanswer_confirm_delete.html'
     login_url = reverse_lazy('login')
     
     def get_success_url(self):
@@ -788,8 +779,8 @@ class DeleteBlogPostView(LoginRequiredMixin, IsAuthorMixin, DeleteView):
     model = BlogPost
     slug_field = 'slug'
     slug_url_kwarg = 'slug'
-    template_name = 'blogpost_confirm_delete.html'
-    success_url = reverse_lazy('blog_feed')
+    template_name = 'blog/blogpost_confirm_delete.html'
+    success_url = reverse_lazy('home')
     login_url = reverse_lazy('login')
     
     def delete(self, request, *args, **kwargs):

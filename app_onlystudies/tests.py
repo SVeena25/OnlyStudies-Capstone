@@ -24,7 +24,7 @@ class AuthenticationTest(TestCase):
         """Test login page is accessible"""
         response = self.client.get(reverse('login'))
         self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, 'login.html')
+        self.assertTemplateUsed(response, 'core/login.html')
     
     def test_login_successful(self):
         """Test successful user login"""
@@ -107,7 +107,7 @@ class AuthenticationTest(TestCase):
         })
         # Should re-render login page with error
         self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, 'login.html')
+        self.assertTemplateUsed(response, 'core/login.html')
         self.assertFalse(response.wsgi_request.user.is_authenticated)
 
 

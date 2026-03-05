@@ -1,7 +1,7 @@
-{% extends 'base.html' %}
+{% extends 'core/base.html' %}
 {% load static %}
 
-{% block title %}Delete Answer - Confirm{% endblock %}
+{% block title %}Delete Question - Confirm{% endblock %}
 
 {% block content %}
 <div class="container mt-5 mb-5">
@@ -9,7 +9,7 @@
         <div class="col-md-6">
             <div class="card shadow-sm border-danger">
                 <div class="card-header bg-danger text-white">
-                    <h3 class="mb-0"><i class="bi bi-exclamation-triangle-fill me-2"></i>Delete Answer</h3>
+                    <h3 class="mb-0"><i class="bi bi-exclamation-triangle-fill me-2"></i>Delete Question</h3>
                 </div>
                 <div class="card-body">
                     <div class="alert alert-warning" role="alert">
@@ -18,13 +18,14 @@
                     </div>
                     
                     <p class="text-muted mb-4">
-                        Are you sure you want to permanently delete this answer?
+                        Are you sure you want to permanently delete this question?
                     </p>
                     
                     <div class="card mb-4 bg-light">
                         <div class="card-body">
+                            <h6 class="card-title">{{ object.title }}</h6>
                             <p class="card-text text-muted small">
-                                {{ object.content|truncatewords:50 }}
+                                {{ object.content|truncatewords:30 }}
                             </p>
                         </div>
                     </div>
@@ -34,7 +35,7 @@
                         <button type="submit" class="btn btn-danger flex-grow-1">
                             <i class="bi bi-trash me-2"></i>Yes, Delete Permanently
                         </button>
-                        <a href="{% url 'forum_question' object.question.slug %}" class="btn btn-secondary flex-grow-1">
+                        <a href="{% url 'forum_question' object.slug %}" class="btn btn-secondary flex-grow-1">
                             <i class="bi bi-arrow-left me-2"></i>Cancel
                         </a>
                     </form>
@@ -44,3 +45,4 @@
     </div>
 </div>
 {% endblock %}
+

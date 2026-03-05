@@ -33,9 +33,7 @@ urlpatterns = [
     path('category/<slug:category_slug>/<slug:subcategory_slug>/', 
         views.SubCategoryView.as_view(), name='subcategory'),
     
-    # Blog Feed
-    path('blog/', 
-        views.BlogFeedView.as_view(), name='blog_feed'),
+    # Blog
     path('blog/<slug:slug>/', 
         views.BlogPostDetailView.as_view(), name='blog_detail'),
     path('blog/<slug:slug>/edit/', 
