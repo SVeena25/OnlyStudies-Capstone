@@ -495,11 +495,16 @@ def apply_exam(request, exam_name):
 
 class IsAuthorMixin(UserPassesTestMixin):
     """
-    Mixin to check if the user is the author of the object
+    Mixin to check if the user can manage the object
+    Allows object authors and admin users (staff/superuser).
     """
     def test_func(self):
         obj = self.get_object()
-        return obj.author == self.request.user
+        return (
+            obj.author == self.request.user
+            or self.request.user.is_staff
+            or self.request.user.is_superuser
+        )
     
     def handle_no_permission(self):
         messages.error(self.request, 'You do not have permission to delete this item.')
