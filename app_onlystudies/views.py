@@ -16,6 +16,32 @@ from .forms import SignUpForm, ForumQuestionForm, ForumAnswerForm, AppointmentFo
 from .models import Category, SubCategory, BlogPost, Notification, ForumQuestion, ForumAnswer, Task, Appointment
 
 
+def _safe_blog_image_url(image_field):
+    """Return a safe image URL for blog images, with production fallbacks."""
+    fallback = '/static/img/blog.png'
+    if not image_field:
+        return None
+
+    try:
+        image_url = image_field.url
+    except Exception:
+        return fallback
+
+    is_production = getattr(settings, 'IS_PRODUCTION', False)
+    has_cloudinary_storage = getattr(settings, 'HAS_CLOUDINARY_STORAGE', False)
+
+    if is_production:
+        # In production, avoid broken local-media paths and non-Cloudinary remote URLs.
+        if image_url.startswith('/media/'):
+            return fallback
+        if not has_cloudinary_storage:
+            return fallback
+        if 'res.cloudinary.com/' not in image_url:
+            return fallback
+
+    return image_url
+
+
 class HomePage(TemplateView):
     """
     Displays home page
@@ -352,6 +378,10 @@ class BlogFeedView(ListView):
         context['page_title'] = 'Blog Feed'
         context['is_production'] = getattr(settings, 'IS_PRODUCTION', False)
         context['has_cloudinary_storage'] = getattr(settings, 'HAS_CLOUDINARY_STORAGE', False)
+
+        for post in context['blog_posts']:
+            post.display_image_url = _safe_blog_image_url(post.featured_image)
+
         return context
 
 
@@ -375,6 +405,7 @@ class BlogPostDetailView(DetailView):
         context['page_title'] = context['post'].title
         context['is_production'] = getattr(settings, 'IS_PRODUCTION', False)
         context['has_cloudinary_storage'] = getattr(settings, 'HAS_CLOUDINARY_STORAGE', False)
+        context['post_image_url'] = _safe_blog_image_url(context['post'].featured_image)
         
         # Get related posts from the same category (exclude current post)
         post = context['post']
@@ -382,6 +413,10 @@ class BlogPostDetailView(DetailView):
             is_published=True,
             category=post.category
         ).exclude(id=post.id).select_related('author', 'category')[:4]
+
+        for related_post in related_posts:
+            related_post.display_image_url = _safe_blog_image_url(related_post.featured_image)
+
         context['related_posts'] = related_posts
         
         return context
