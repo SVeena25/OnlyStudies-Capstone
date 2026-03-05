@@ -99,6 +99,47 @@ class TaskListView(LoginRequiredMixin, ListView):
         return ctx
 
 
+class CreateTaskView(LoginRequiredMixin, CreateView):
+    """
+    View for creating a task
+    """
+    model = Task
+    form_class = TaskForm
+    template_name = 'create_task.html'
+    login_url = reverse_lazy('login')
+
+    def form_valid(self, form):
+        form.instance.created_by = self.request.user
+        messages.success(self.request, 'Task created successfully!')
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse_lazy('tasks')
+
+
+class DeleteTaskView(LoginRequiredMixin, DeleteView):
+    """
+    View for deleting a task
+    Only the creator can delete their own task
+    """
+    model = Task
+    pk_url_kwarg = 'pk'
+    template_name = 'task_confirm_delete.html'
+    success_url = reverse_lazy('tasks')
+    login_url = reverse_lazy('login')
+
+    def dispatch(self, request, *args, **kwargs):
+        obj = self.get_object()
+        if obj.created_by != request.user:
+            messages.error(request, 'You do not have permission to delete this task.')
+            return redirect('tasks')
+        return super().dispatch(request, *args, **kwargs)
+
+    def delete(self, request, *args, **kwargs):
+        messages.success(request, 'Task deleted successfully!')
+        return super().delete(request, *args, **kwargs)
+
+
 class SearchResultsView(TemplateView):
     """
     Simple search across blog posts and forum questions

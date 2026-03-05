@@ -2,7 +2,7 @@ from django.test import TestCase, Client
 from django.contrib.auth.models import User
 from django.urls import reverse
 from datetime import datetime
-from app_onlystudies.models import Category, SubCategory, BlogPost, Notification
+from app_onlystudies.models import Category, SubCategory, BlogPost, Notification, Task
 import json
 
 
@@ -402,6 +402,59 @@ class NotificationsAPITest(TestCase):
             required_fields = ['id', 'title', 'message', 'type', 'is_read', 'created_at']
             for field in required_fields:
                 self.assertIn(field, notif)
+
+
+class TaskCRUDTest(TestCase):
+    """Frontend Task CRUD tests for regular authenticated users"""
+
+    def setUp(self):
+        self.client = Client()
+        self.user = User.objects.create_user(
+            username='taskuser',
+            password='testpass123'
+        )
+        self.category = Category.objects.create(name='Task Cat', slug='task-cat')
+        self.client.login(username='taskuser', password='testpass123')
+
+    def test_create_task_from_frontend(self):
+        response = self.client.post(reverse('add_task'), {
+            'title': 'Prepare notes',
+            'description': 'Prepare module notes',
+            'category': self.category.id,
+            'priority': 'high',
+            'due_date': ''
+        })
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(Task.objects.filter(title='Prepare notes', created_by=self.user).exists())
+
+    def test_update_task_from_frontend(self):
+        task = Task.objects.create(
+            title='Old task title',
+            description='Old desc',
+            category=self.category,
+            priority='medium',
+            created_by=self.user,
+        )
+        response = self.client.post(reverse('edit_task', kwargs={'pk': task.pk}), {
+            'title': 'Updated task title',
+            'description': 'Updated desc',
+            'category': self.category.id,
+            'priority': 'low',
+            'due_date': ''
+        })
+        self.assertEqual(response.status_code, 302)
+        task.refresh_from_db()
+        self.assertEqual(task.title, 'Updated task title')
+
+    def test_delete_task_from_frontend(self):
+        task = Task.objects.create(
+            title='Task to delete',
+            priority='medium',
+            created_by=self.user,
+        )
+        response = self.client.post(reverse('delete_task', kwargs={'pk': task.pk}))
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(Task.objects.filter(pk=task.pk).exists())
 
 
 
