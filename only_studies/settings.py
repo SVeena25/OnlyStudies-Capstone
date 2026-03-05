@@ -180,11 +180,19 @@ if IS_PRODUCTION:
         )
     )
     if has_cloudinary:
+        CLOUDINARY_STORAGE = {
+            # Force HTTPS URLs to avoid mixed-content issues in production.
+            'SECURE': True,
+        }
         _default_file_backend = 'cloudinary_storage.storage.MediaCloudinaryStorage'
     else:
         _default_file_backend = 'django.core.files.storage.FileSystemStorage'
 else:
+    has_cloudinary = False
     _default_file_backend = 'django.core.files.storage.FileSystemStorage'
+
+# Exposed for templates/views that need to decide media fallbacks.
+HAS_CLOUDINARY_STORAGE = has_cloudinary
 
 STORAGES = {
     'default': {

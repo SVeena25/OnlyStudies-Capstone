@@ -351,6 +351,7 @@ class BlogFeedView(ListView):
         context = super().get_context_data(**kwargs)
         context['page_title'] = 'Blog Feed'
         context['is_production'] = getattr(settings, 'IS_PRODUCTION', False)
+        context['has_cloudinary_storage'] = getattr(settings, 'HAS_CLOUDINARY_STORAGE', False)
         return context
 
 
@@ -373,6 +374,7 @@ class BlogPostDetailView(DetailView):
         context = super().get_context_data(**kwargs)
         context['page_title'] = context['post'].title
         context['is_production'] = getattr(settings, 'IS_PRODUCTION', False)
+        context['has_cloudinary_storage'] = getattr(settings, 'HAS_CLOUDINARY_STORAGE', False)
         
         # Get related posts from the same category (exclude current post)
         post = context['post']
