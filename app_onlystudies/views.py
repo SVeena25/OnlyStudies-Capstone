@@ -62,7 +62,8 @@ def _safe_blog_image_url(image_field):
         # In production those files are unavailable, so prefer matching static assets.
         if image_name.startswith('blog/'):
             filename = image_name.rsplit('/', 1)[-1]
-            if filename:
+            # Only treat legacy filename values (with extension) as local static assets.
+            if filename and '.' in filename:
                 return f'/static/img/{filename}'
 
         # In production, avoid broken local-media paths and non-Cloudinary remote URLs.
