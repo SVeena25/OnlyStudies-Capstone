@@ -30,7 +30,7 @@ TEMPLATES_DIR = os.path.join(BASE_DIR, 'templates')
 SECRET_KEY = os.environ.get('SECRET_KEY', 'dev-insecure-secret-key-onlystudies')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = str(os.environ.get('DEBUG', 'False')).strip().lower() in {'1', 'true', 'yes', 'on'}
 
 database_url = os.environ.get("DATABASE_URL")
 IS_PRODUCTION = bool(os.environ.get('DYNO') or database_url)
