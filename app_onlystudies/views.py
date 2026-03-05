@@ -531,13 +531,12 @@ class UpdateBlogPostView(LoginRequiredMixin, IsAuthorMixin, UpdateView):
             messages.success(self.request, 'Your blog post has been updated successfully!')
             return response
         except CloudinaryError:
-            existing_post = self.get_object()
-            existing_image = existing_post.featured_image
-
-            if 'featured_image' in form.changed_data:
-                form.instance.featured_image = existing_image
-
-            self.object = form.save()
+            self.object = self.get_object()
+            self.object.title = form.cleaned_data['title']
+            self.object.content = form.cleaned_data['content']
+            self.object.category = form.cleaned_data.get('category')
+            self.object.is_published = form.cleaned_data.get('is_published', False)
+            self.object.save(update_fields=['title', 'content', 'category', 'is_published', 'updated_at'])
             messages.warning(
                 self.request,
                 'Your post was updated, but the new image could not be uploaded. The previous image was kept.'
