@@ -3,6 +3,7 @@ from django.contrib import admin
 from django.contrib import messages
 from django.conf import settings
 from .models import Category, SubCategory, BlogPost, Notification, ForumQuestion, ForumAnswer, Task, Appointment
+from .forms import sanitize_cloudinary_image_link
 from cloudinary.exceptions import Error as CloudinaryError
 from cloudinary import uploader
 
@@ -19,6 +20,9 @@ class BlogPostAdminForm(forms.ModelForm):
     class Meta:
         model = BlogPost
         fields = '__all__'
+
+    def clean_cloudinary_image_link(self):
+        return sanitize_cloudinary_image_link(self.cleaned_data.get('cloudinary_image_link'))
 
 
 class SubCategoryInline(admin.TabularInline):

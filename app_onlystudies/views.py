@@ -13,6 +13,7 @@ from django.core.exceptions import PermissionDenied
 from django.conf import settings
 from cloudinary.exceptions import Error as CloudinaryError
 from cloudinary import uploader
+from cloudinary.utils import cloudinary_url
 from .forms import SignUpForm, ForumQuestionForm, ForumAnswerForm, AppointmentForm, BlogPostForm, TaskForm
 from .models import Category, SubCategory, BlogPost, Notification, ForumQuestion, ForumAnswer, Task, Appointment
 
@@ -23,16 +24,31 @@ def _safe_blog_image_url(image_field):
     if not image_field:
         return None
 
-    image_name = getattr(image_field, 'name', '') or ''
+    image_name = (getattr(image_field, 'name', '') or '').strip()
 
     # Legacy rows may store a direct URL string instead of a storage key.
     if image_name.startswith('http://') or image_name.startswith('https://'):
         return image_name
 
-    try:
-        image_url = image_field.url
-    except Exception:
-        image_url = ''
+    is_production = getattr(settings, 'IS_PRODUCTION', False)
+    has_cloudinary_storage = getattr(settings, 'HAS_CLOUDINARY_STORAGE', False)
+
+    # Legacy values like blog/logo.png came from local media usage; prefer static fallback.
+    filename = image_name.rsplit('/', 1)[-1] if '/' in image_name else image_name
+    if image_name.startswith('blog/') and filename and '.' in filename:
+        return f'/static/img/{filename}'
+
+    # Build Cloudinary URL from public_id to avoid malformed /media/... URLs.
+    if has_cloudinary_storage and image_name:
+        try:
+            image_url, _ = cloudinary_url(image_name, secure=is_production)
+        except Exception:
+            image_url = ''
+    else:
+        try:
+            image_url = image_field.url
+        except Exception:
+            image_url = ''
 
     # Some invalid values are rendered as /media/https://... by storage backends.
     # Prefer the original absolute URL when available.
@@ -40,9 +56,6 @@ def _safe_blog_image_url(image_field):
         if image_name.startswith('http://') or image_name.startswith('https://'):
             return image_name
         return fallback
-
-    is_production = getattr(settings, 'IS_PRODUCTION', False)
-    has_cloudinary_storage = getattr(settings, 'HAS_CLOUDINARY_STORAGE', False)
 
     if is_production:
         # Legacy DB rows can still store local media paths like "blog/logo.png".

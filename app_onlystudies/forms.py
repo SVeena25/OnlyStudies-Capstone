@@ -5,6 +5,32 @@ from django.core.exceptions import ValidationError
 from .models import ForumQuestion, ForumAnswer, Appointment, BlogPost, Task
 
 
+def sanitize_cloudinary_image_link(value):
+    """Validate a Cloudinary import URL and reject concatenated/multiple URLs."""
+    cleaned = (value or '').strip()
+    if not cleaned:
+        return ''
+
+    first_http = cleaned.find('http://')
+    first_https = cleaned.find('https://')
+    starts_with_url = cleaned.startswith('http://') or cleaned.startswith('https://')
+
+    if not starts_with_url:
+        raise ValidationError('Please enter a valid URL starting with http:// or https://.')
+
+    # Detect accidental concatenation such as ...jpghttps://example.com
+    second_http = cleaned.find('http://', 7)
+    second_https = cleaned.find('https://', 8)
+    if second_http != -1 or second_https != -1:
+        raise ValidationError('Please provide only one image URL. It looks like multiple URLs were pasted together.')
+
+    # Avoid common copy/paste issue where extra text is appended after the URL.
+    if ' ' in cleaned or '\n' in cleaned or '\r' in cleaned:
+        raise ValidationError('Cloudinary Image Link must contain only one URL with no extra text.')
+
+    return cleaned
+
+
 class SignUpForm(forms.ModelForm):
     """
     Custom signup form with password validation and security
@@ -243,6 +269,9 @@ class BlogPostForm(forms.ModelForm):
         if len(content) < 50:
             raise ValidationError("Blog post content must be at least 50 characters long.")
         return content
+
+    def clean_cloudinary_image_link(self):
+        return sanitize_cloudinary_image_link(self.cleaned_data.get('cloudinary_image_link'))
 
 
 class TaskForm(forms.ModelForm):
