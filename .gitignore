@@ -34,3 +34,17 @@ service-account*.json
 # Runtime/generated folders
 staticfiles/
 media/
+
+# Local backups and exports
+local_backup*.json
+*.bak
+*.tmp
+
+# Local databases and artifacts
+*.sqlite3
+*.sqlite3-journal
+*.db
+
+# Heroku and editor-local files
+.heroku/
+.vscode/

@@ -99,6 +99,33 @@ Heroku will auto-run this via the `release` command in Procfile.
 
 ## Step 5: Deploy to Heroku
 
+### Sensitive Files Policy (Git + Heroku)
+
+Never commit local secrets or runtime artifacts to Git. This project enforces:
+
+- `.gitignore` for local secret/config and generated files.
+- `.slugignore` to exclude local/sensitive files from Heroku build slugs.
+
+Always keep these out of Git and Heroku slugs:
+
+```txt
+.env
+.env.*
+env.py
+credentials.json
+service-account*.json
+local_backup*.json
+*.sqlite3
+media/
+```
+
+If any were committed earlier, remove them from tracking:
+
+```bash
+git rm -r --cached media db.sqlite3
+git commit -m "Stop tracking sensitive/local artifacts"
+```
+
 ### Option A: Using Heroku CLI
 
 ```bash
