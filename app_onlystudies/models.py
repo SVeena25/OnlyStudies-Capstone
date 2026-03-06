@@ -1,5 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
+from django.utils import timezone
 from django.utils.text import slugify
 
 
@@ -54,8 +56,69 @@ class BlogPost(models.Model):
     class Meta:
         ordering = ['-created_at']
     
+    @property
+    def upvote_count(self):
+        return self.votes.filter(value=1).count()
+
+    @property
+    def downvote_count(self):
+        return self.votes.filter(value=-1).count()
+
+    @property
+    def vote_score(self):
+        return self.upvote_count - self.downvote_count
+
     def __str__(self):
         return self.title
+
+
+class BlogPostVote(models.Model):
+    """
+    Per-user vote for a blog post: +1 upvote or -1 downvote.
+    """
+    UPVOTE = 1
+    DOWNVOTE = -1
+    VALUE_CHOICES = (
+        (UPVOTE, 'Upvote'),
+        (DOWNVOTE, 'Downvote'),
+    )
+
+    blog_post = models.ForeignKey(BlogPost, on_delete=models.CASCADE, related_name='votes')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='blog_post_votes')
+    value = models.SmallIntegerField(choices=VALUE_CHOICES)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('blog_post', 'user')
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(value__in=[1, -1]),
+                name='blog_post_vote_value_valid',
+            ),
+        ]
+
+    def __str__(self):
+        vote_name = 'upvote' if self.value == self.UPVOTE else 'downvote'
+        return f"{self.user.username} {vote_name} on {self.blog_post.title}"
+
+
+class BlogComment(models.Model):
+    """
+    Comment model for user responses on blog/news stories.
+    """
+    blog_post = models.ForeignKey(BlogPost, on_delete=models.CASCADE, related_name='comments')
+    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='blog_comments')
+    content = models.TextField()
+    is_approved = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f"Comment by {self.author.username} on {self.blog_post.title}"
 
 
 class Notification(models.Model):
@@ -133,6 +196,13 @@ class ForumAnswer(models.Model):
     
     class Meta:
         ordering = ['-is_accepted', 'created_at']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['question'],
+                condition=models.Q(is_accepted=True),
+                name='single_accepted_answer_per_question',
+            ),
+        ]
     
     def __str__(self):
         return f"Answer by {self.author.username} on {self.question.title}"
@@ -175,6 +245,17 @@ class Appointment(models.Model):
 
     class Meta:
         ordering = ['appointment_datetime', 'title']
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(appointment_datetime__gte=models.F('created_at')),
+                name='appointment_datetime_not_before_created',
+            ),
+        ]
+
+    def clean(self):
+        super().clean()
+        if self.appointment_datetime and self.appointment_datetime <= timezone.now():
+            raise ValidationError({'appointment_datetime': 'Appointment date/time must be in the future.'})
 
     def __str__(self):
         return f"{self.title} @ {self.appointment_datetime.isoformat()}"

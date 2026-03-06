@@ -1,0 +1,33 @@
+Story ID,Title,Priority,Status,Sprint,Type,Labels,Implementation Evidence
+US-001,Sign up with email and password,Must,Done,S1-S2,User Story,"auth,must-have",app_onlystudies/views.py|templates/core/signup.html
+US-002,Log in with credentials,Must,Partial,S1-S2,User Story,"auth,must-have",app_onlystudies/views.py|templates/core/login.html
+US-003,Log out of account,Must,Done,S1-S2,User Story,"auth,must-have",app_onlystudies/views.py|templates/core/base.html
+US-004,Navigate categories and subcategories,Must,Done,S1-S2,User Story,"navigation,must-have",templates/core/base.html|app_onlystudies/urls.py
+US-005,View all courses in category,Must,Done,S1-S2,User Story,"navigation,must-have",app_onlystudies/views.py|templates/categories/category.html
+US-006,View subcategory details,Must,Done,S1-S2,User Story,"navigation,must-have",app_onlystudies/views.py|templates/categories/subcategory.html
+US-007,See blog feed on home page,Must,Done,S1-S2,User Story,"home,must-have",app_onlystudies/views.py|templates/core/index.html
+US-008,See notifications and updates,Must,Partial,S1-S2,User Story,"home,must-have",app_onlystudies/views.py|templates/core/index.html
+US-009,Explore exams section,Must,Done,S1-S2,User Story,"home,must-have",templates/core/index.html|app_onlystudies/views.py
+US-010,Search content by keyword,Should,Partial,S3-S4,User Story,"search,should-have",app_onlystudies/views.py|templates/core/search_results.html
+US-011,Filter by difficulty level,Should,Backlog,S3-S4,User Story,"filtering,should-have",Not implemented
+US-012,View and edit profile,Should,Backlog,S3-S4,User Story,"profile,should-have",Not implemented
+US-013,Save favorite courses,Should,Backlog,S3-S4,User Story,"favorites,should-have",Not implemented
+US-014,Ask forum questions,Should,Done,S3-S4,User Story,"forum,should-have",app_onlystudies/views.py|templates/forum/ask_question.html
+US-015,View answers and vote on answers,Should,Partial,S3-S4,User Story,"forum,should-have",templates/forum/forum_question.html
+US-016,View course curriculum,Should,Backlog,S3-S4,User Story,"courses,should-have",Not implemented
+US-017,Track learning progress,Should,Backlog,S3-S4,User Story,"courses,should-have",Not implemented
+US-018,Watch video lectures,Could,Backlog,S5+,User Story,"learning,could-have",Not implemented
+US-019,Download course materials,Could,Backlog,S5+,User Story,"learning,could-have",Not implemented
+US-020,Take quizzes,Could,Backlog,S5+,User Story,"learning,could-have",Not implemented
+US-021,Connect with students,Could,Backlog,S5+,User Story,"social,could-have",Not implemented
+US-022,Share courses on social media,Could,Backlog,S5+,User Story,"social,could-have",Not implemented
+US-023,Join study groups,Could,Backlog,S5+,User Story,"social,could-have",Not implemented
+US-024,Instructor creates courses,Could,Backlog,S5+,User Story,"instructor,could-have",Not implemented
+US-025,Instructor analytics dashboard,Could,Backlog,S5+,User Story,"instructor,could-have",Not implemented
+US-026,Earn achievement badges,Could,Backlog,S5+,User Story,"gamification,could-have",Not implemented
+US-027,Use points system,Could,Backlog,S5+,User Story,"gamification,could-have",Not implemented
+US-028,Purchase premium courses,Could,Backlog,S5+,User Story,"payments,could-have",Not implemented
+US-029,Apply promo codes,Could,Backlog,S5+,User Story,"payments,could-have",Not implemented
+US-030,Responsive design on mobile,Could,Done,S5+,User Story,"mobile,could-have",templates/core/base.html|static/css/style.css
+US-031,Accessible content and navigation,Could,Partial,S5+,User Story,"accessibility,could-have",templates/core/base.html|static/css/style.css
+US-032,Admin platform analytics,Could,Backlog,S5+,User Story,"analytics,could-have",Not implemented

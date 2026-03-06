@@ -11,11 +11,12 @@ from django.views.decorators.http import require_http_methods
 from django.http import HttpResponse, JsonResponse
 from django.core.exceptions import PermissionDenied
 from django.conf import settings
+from django.utils.text import slugify
 from cloudinary.exceptions import Error as CloudinaryError
 from cloudinary import uploader
 from cloudinary.utils import cloudinary_url
-from .forms import SignUpForm, ForumQuestionForm, ForumAnswerForm, AppointmentForm, BlogPostForm, TaskForm
-from .models import Category, SubCategory, BlogPost, Notification, ForumQuestion, ForumAnswer, Task, Appointment
+from .forms import SignUpForm, ForumQuestionForm, ForumAnswerForm, AppointmentForm, BlogPostForm, BlogCommentForm, TaskForm
+from .models import Category, SubCategory, BlogPost, BlogComment, BlogPostVote, Notification, ForumQuestion, ForumAnswer, Task, Appointment
 
 
 def _safe_blog_image_url(image_field):
@@ -282,6 +283,18 @@ class CustomLoginView(LoginView):
     redirect_authenticated_user = True
     success_url = reverse_lazy('home')
 
+    def get_default_redirect_url(self):
+        """
+        Role-based default redirect after successful login.
+        Keeps LoginView's built-in `next` handling unchanged.
+        """
+        user = self.request.user
+        if user.is_staff or user.is_superuser:
+            return reverse_lazy('admin:index')
+        if user.groups.filter(name='Instructor').exists():
+            return reverse_lazy('create_blog')
+        return reverse_lazy('home')
+
     def get_context_data(self, **kwargs):
         """Add additional context"""
         context = super().get_context_data(**kwargs)
@@ -435,8 +448,139 @@ class BlogPostDetailView(DetailView):
             related_post.display_image_url = _safe_blog_image_url(related_post.featured_image)
 
         context['related_posts'] = related_posts
+        context['comments'] = post.comments.filter(is_approved=True).select_related('author')
+        context['comment_form'] = BlogCommentForm()
+        context['upvote_count'] = post.upvote_count
+        context['downvote_count'] = post.downvote_count
+        context['vote_score'] = post.vote_score
+        context['current_user_vote'] = 0
+        if self.request.user.is_authenticated:
+            existing_vote = BlogPostVote.objects.filter(blog_post=post, user=self.request.user).first()
+            if existing_vote:
+                context['current_user_vote'] = existing_vote.value
         
         return context
+
+
+class CreateBlogPostView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
+    """
+    Public create flow for news/blog stories with publishing permissions.
+    """
+    model = BlogPost
+    form_class = BlogPostForm
+    template_name = 'blog/create_blog_post.html'
+    login_url = reverse_lazy('login')
+
+    def test_func(self):
+        user = self.request.user
+        return (
+            user.is_staff
+            or user.is_superuser
+            or user.groups.filter(name='Instructor').exists()
+        )
+
+    def handle_no_permission(self):
+        if not self.request.user.is_authenticated:
+            return redirect(f"{reverse_lazy('login')}?next={self.request.path}")
+        messages.error(self.request, 'You do not have permission to create news stories.')
+        return redirect('home')
+
+    def form_valid(self, form):
+        form.instance.author = self.request.user
+
+        base_slug = slugify(form.cleaned_data.get('title', 'news-story')) or 'news-story'
+        slug = base_slug
+        counter = 1
+        while BlogPost.objects.filter(slug=slug).exists():
+            slug = f'{base_slug}-{counter}'
+            counter += 1
+        form.instance.slug = slug
+
+        cloudinary_image_link = (form.cleaned_data.get('cloudinary_image_link') or '').strip()
+        if cloudinary_image_link:
+            try:
+                upload_result = uploader.upload(cloudinary_image_link, folder='blog')
+                public_id = upload_result.get('public_id')
+                if public_id:
+                    form.instance.featured_image = public_id
+            except Exception as exc:
+                messages.warning(self.request, f'Post will be saved, but image import failed: {exc}')
+
+        # Only staff/superusers can publish immediately.
+        if not (self.request.user.is_staff or self.request.user.is_superuser):
+            form.instance.is_published = False
+            messages.info(self.request, 'Story submitted successfully. It is pending review before publication.')
+        else:
+            messages.success(self.request, 'Your news story has been published successfully!')
+
+        return super().form_valid(form)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['page_title'] = 'Create News Story'
+        context['can_publish'] = self.request.user.is_staff or self.request.user.is_superuser
+        return context
+
+    def get_success_url(self):
+        if self.object.is_published:
+            return reverse_lazy('blog_detail', kwargs={'slug': self.object.slug})
+        return reverse_lazy('home')
+
+
+@require_http_methods(['POST'])
+def post_blog_comment(request, slug):
+    """
+    Post a comment on a published blog/news story.
+    """
+    if not request.user.is_authenticated:
+        messages.error(request, 'You must be logged in to post a comment.')
+        return redirect(f"{reverse_lazy('login')}?next={request.path}")
+
+    post = get_object_or_404(BlogPost.objects.filter(is_published=True), slug=slug)
+    form = BlogCommentForm(request.POST)
+
+    if form.is_valid():
+        comment = form.save(commit=False)
+        comment.blog_post = post
+        comment.author = request.user
+        comment.save()
+        messages.success(request, 'Your comment has been posted.')
+    else:
+        messages.error(request, 'Please enter a valid comment (at least 3 characters).')
+
+    return redirect('blog_detail', slug=slug)
+
+
+@require_http_methods(['POST'])
+def vote_blog_post(request, slug, vote_type):
+    """
+    Upvote/downvote a published blog post. Repeating the same vote removes it.
+    """
+    if not request.user.is_authenticated:
+        messages.error(request, 'You must be logged in to vote.')
+        return redirect(f"{reverse_lazy('login')}?next={request.path}")
+
+    post = get_object_or_404(BlogPost.objects.filter(is_published=True), slug=slug)
+    vote_value = BlogPostVote.UPVOTE if vote_type == 'up' else BlogPostVote.DOWNVOTE
+
+    if vote_type not in {'up', 'down'}:
+        messages.error(request, 'Invalid vote action.')
+        return redirect('blog_detail', slug=slug)
+
+    existing_vote = BlogPostVote.objects.filter(blog_post=post, user=request.user).first()
+
+    if existing_vote and existing_vote.value == vote_value:
+        existing_vote.delete()
+        messages.info(request, 'Your vote was removed.')
+    elif existing_vote:
+        existing_vote.value = vote_value
+        existing_vote.save(update_fields=['value', 'updated_at'])
+        messages.success(request, 'Your vote was updated.')
+    else:
+        BlogPostVote.objects.create(blog_post=post, user=request.user, value=vote_value)
+        messages.success(request, 'Your vote was recorded.')
+
+    return redirect('blog_detail', slug=slug)
 
 
 class ForumView(ListView):
@@ -618,6 +762,19 @@ class UpdateBlogPostView(LoginRequiredMixin, IsAuthorMixin, UpdateView):
     slug_field = 'slug'
     slug_url_kwarg = 'slug'
     login_url = reverse_lazy('login')
+
+    def test_func(self):
+        user = self.request.user
+        role_allowed = (
+            user.is_staff
+            or user.is_superuser
+            or user.groups.filter(name='Instructor').exists()
+        )
+        return role_allowed and super().test_func()
+
+    def handle_no_permission(self):
+        messages.error(self.request, 'You do not have permission to manage blog posts.')
+        return redirect('home')
     
     def form_valid(self, form):
         """Update the blog post and optionally import image from Cloudinary link."""
@@ -787,6 +944,29 @@ class UpdateAppointmentView(LoginRequiredMixin, UpdateView):
         return reverse_lazy('appointments')
 
 
+class DeleteAppointmentView(LoginRequiredMixin, DeleteView):
+    """
+    View for deleting an appointment.
+    Only the creator can delete their own appointment.
+    """
+    model = Appointment
+    pk_url_kwarg = 'pk'
+    template_name = 'appointments/appointment_confirm_delete.html'
+    success_url = reverse_lazy('appointments')
+    login_url = reverse_lazy('login')
+
+    def dispatch(self, request, *args, **kwargs):
+        obj = self.get_object()
+        if obj.created_by != request.user:
+            messages.error(request, 'You do not have permission to delete this appointment.')
+            return redirect('appointments')
+        return super().dispatch(request, *args, **kwargs)
+
+    def delete(self, request, *args, **kwargs):
+        messages.success(request, 'Your appointment has been deleted successfully!')
+        return super().delete(request, *args, **kwargs)
+
+
 class DeleteForumQuestionView(LoginRequiredMixin, IsAuthorMixin, DeleteView):
     """
     View for deleting a forum question
@@ -836,6 +1016,19 @@ class DeleteBlogPostView(LoginRequiredMixin, IsAuthorMixin, DeleteView):
     template_name = 'blog/blogpost_confirm_delete.html'
     success_url = reverse_lazy('home')
     login_url = reverse_lazy('login')
+
+    def test_func(self):
+        user = self.request.user
+        role_allowed = (
+            user.is_staff
+            or user.is_superuser
+            or user.groups.filter(name='Instructor').exists()
+        )
+        return role_allowed and super().test_func()
+
+    def handle_no_permission(self):
+        messages.error(self.request, 'You do not have permission to manage blog posts.')
+        return redirect('home')
     
     def delete(self, request, *args, **kwargs):
         """Delete the blog post and show success message"""

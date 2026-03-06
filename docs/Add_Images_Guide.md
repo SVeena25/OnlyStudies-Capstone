@@ -21,9 +21,9 @@ Run this command in your terminal (replace with your actual credentials):
 heroku config:set CLOUDINARY_URL="cloudinary://YOUR_API_KEY:YOUR_API_SECRET@YOUR_CLOUD_NAME" -a only-studies
 ```
 
-For example:
+Example format:
 ```powershell
-heroku config:set CLOUDINARY_URL="cloudinary://123456789012345:abcdefghijklmnopqrstuvwxyz123456@dzuzzg6cy" -a only-studies
+heroku config:set CLOUDINARY_URL="cloudinary://API_KEY:API_SECRET@CLOUD_NAME" -a only-studies
 ```
 
 ### 3. Remove the Image Clearing Command

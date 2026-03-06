@@ -73,6 +73,21 @@
                         </div>
 
                         <div class="mb-3">
+                            <label for="{{ form.role.id_for_label }}" class="form-label">I am registering as</label>
+                            {{ form.role }}
+                            {% if form.role.help_text %}
+                                <small class="form-text text-muted d-block mt-1">{{ form.role.help_text }}</small>
+                            {% endif %}
+                            {% if form.role.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.role.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
                             <label for="{{ form.password.id_for_label }}" class="form-label">Password</label>
                             {{ form.password }}
                             <small class="form-text text-muted d-block mt-1">

@@ -1,8 +1,9 @@
 from django import forms
+from django.contrib.auth.models import Group
 from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
-from .models import ForumQuestion, ForumAnswer, Appointment, BlogPost, Task
+from .models import ForumQuestion, ForumAnswer, Appointment, BlogPost, BlogComment, Task
 
 
 def sanitize_cloudinary_image_link(value):
@@ -35,6 +36,23 @@ class SignUpForm(forms.ModelForm):
     """
     Custom signup form with password validation and security
     """
+    ROLE_STUDENT = 'student'
+    ROLE_INSTRUCTOR = 'instructor'
+    ROLE_CHOICES = (
+        (ROLE_STUDENT, 'Student'),
+        (ROLE_INSTRUCTOR, 'Instructor'),
+    )
+
+    role = forms.ChoiceField(
+        choices=ROLE_CHOICES,
+        initial=ROLE_STUDENT,
+        widget=forms.Select(attrs={
+            'class': 'form-control',
+            'required': True,
+        }),
+        help_text='Choose how you will use the platform.',
+    )
+
     password = forms.CharField(
         widget=forms.PasswordInput(attrs={
             'class': 'form-control',
@@ -118,10 +136,18 @@ class SignUpForm(forms.ModelForm):
         """Save user with hashed password"""
         user = super().save(commit=False)
         password = self.cleaned_data.get('password')
+        selected_role = self.cleaned_data.get('role', self.ROLE_STUDENT)
         user.set_password(password)
         if commit:
             user.save()
+            group_name = 'Instructor' if selected_role == self.ROLE_INSTRUCTOR else 'Student'
+            role_group, _ = Group.objects.get_or_create(name=group_name)
+            user.groups.add(role_group)
         return user
+
+    def get_selected_role(self):
+        """Return selected role value from cleaned form data."""
+        return self.cleaned_data.get('role', self.ROLE_STUDENT)
 
 
 class ForumQuestionForm(forms.ModelForm):
@@ -272,6 +298,29 @@ class BlogPostForm(forms.ModelForm):
 
     def clean_cloudinary_image_link(self):
         return sanitize_cloudinary_image_link(self.cleaned_data.get('cloudinary_image_link'))
+
+
+class BlogCommentForm(forms.ModelForm):
+    """
+    Form for posting comments on blog/news stories.
+    """
+    class Meta:
+        model = BlogComment
+        fields = ('content',)
+        widgets = {
+            'content': forms.Textarea(attrs={
+                'class': 'form-control',
+                'placeholder': 'Share your thoughts about this story...',
+                'rows': 4,
+                'required': True
+            })
+        }
+
+    def clean_content(self):
+        content = (self.cleaned_data.get('content') or '').strip()
+        if len(content) < 3:
+            raise ValidationError('Comment must be at least 3 characters long.')
+        return content
 
 
 class TaskForm(forms.ModelForm):

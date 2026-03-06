@@ -18,10 +18,29 @@
     
     <!-- Bootstrap Icons via CDN to avoid missing static asset in production -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <style>
+        .skip-link {
+            position: absolute;
+            left: -9999px;
+            top: 0;
+            background: #111;
+            color: #fff;
+            padding: 0.5rem 0.75rem;
+            z-index: 2000;
+        }
+
+        .skip-link:focus {
+            left: 0.5rem;
+            top: 0.5rem;
+        }
+    </style>
     
     {% block extra_css %}{% endblock %}
 </head>
 <body>
+    <a class="skip-link" href="#main-content">Skip to main content</a>
+
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-dark" style="background-color: #007075; overflow: visible;">
         <div class="container-fluid">
@@ -32,7 +51,7 @@
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
-            <div class="collapse navbar-collapse show" id="navbarNav">
+            <div class="collapse navbar-collapse" id="navbarNav">
                 <!-- Search and Dropdowns Container -->
                 <div class="mx-auto d-flex flex-column justify-content-center align-items-center gap-2" style="flex: 1;">
                     <!-- Search Bar -->
@@ -107,7 +126,7 @@
     </nav>
 
     <!-- Main Content -->
-    <main>
+    <main id="main-content" tabindex="-1">
         {% block content %}{% endblock %}
     </main>
 
@@ -143,10 +162,10 @@
                 <div class="col-md-4 mb-3">
                     <h5 class="mb-3">Connect With Us</h5>
                     <div class="mb-3">
-                        <a href="https://github.com" target="_blank" class="text-white me-3" style="font-size: 1.5rem; text-decoration: none;" title="GitHub">
+                        <a href="https://github.com" target="_blank" rel="noopener noreferrer" class="text-white me-3" style="font-size: 1.5rem; text-decoration: none;" title="GitHub" aria-label="Visit GitHub">
                             <i class="bi bi-github"></i>
                         </a>
-                        <a href="https://linkedin.com" target="_blank" class="text-white" style="font-size: 1.5rem; text-decoration: none;" title="LinkedIn">
+                        <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" class="text-white" style="font-size: 1.5rem; text-decoration: none;" title="LinkedIn" aria-label="Visit LinkedIn">
                             <i class="bi bi-linkedin"></i>
                         </a>
                     </div>

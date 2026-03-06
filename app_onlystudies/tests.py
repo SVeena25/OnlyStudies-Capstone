@@ -1,8 +1,24 @@
 from django.test import TestCase, Client
+from django.contrib.auth.models import Group
 from django.contrib.auth.models import User
 from django.urls import reverse
+from django.db import IntegrityError
+from django.core.exceptions import ValidationError
+from django.utils import timezone
+from datetime import timedelta
 from datetime import datetime
-from app_onlystudies.models import Category, SubCategory, BlogPost, Notification, Task
+from app_onlystudies.models import (
+    Category,
+    SubCategory,
+    BlogPost,
+    BlogComment,
+    BlogPostVote,
+    Notification,
+    Task,
+    ForumQuestion,
+    ForumAnswer,
+    Appointment,
+)
 import json
 
 
@@ -109,6 +125,38 @@ class AuthenticationTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'core/login.html')
         self.assertFalse(response.wsgi_request.user.is_authenticated)
+
+    def test_signup_assigns_student_role_group(self):
+        """Test signup assigns selected Student group role."""
+        response = self.client.post(reverse('signup'), {
+            'first_name': 'Role',
+            'last_name': 'Student',
+            'username': 'studentroleuser',
+            'email': 'studentrole@example.com',
+            'role': 'student',
+            'password': 'RolePass123!',
+            'password_confirm': 'RolePass123!',
+        })
+        self.assertEqual(response.status_code, 302)
+        user = User.objects.get(username='studentroleuser')
+        self.assertTrue(user.groups.filter(name='Student').exists())
+
+    def test_login_redirects_instructor_to_create_blog(self):
+        """Instructor users should be redirected to create blog page by default."""
+        instructor_group, _ = Group.objects.get_or_create(name='Instructor')
+        instructor = User.objects.create_user(
+            username='instructoruser',
+            email='instructor@example.com',
+            password='RolePass123!'
+        )
+        instructor.groups.add(instructor_group)
+
+        response = self.client.post(reverse('login'), {
+            'username': 'instructoruser',
+            'password': 'RolePass123!'
+        })
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse('create_blog'))
 
 
 class CategoryModelTest(TestCase):
@@ -455,6 +503,195 @@ class TaskCRUDTest(TestCase):
         response = self.client.post(reverse('delete_task', kwargs={'pk': task.pk}))
         self.assertEqual(response.status_code, 302)
         self.assertFalse(Task.objects.filter(pk=task.pk).exists())
+
+
+class AppointmentCRUDTest(TestCase):
+    """Frontend appointment CRUD tests for authenticated users."""
+
+    def setUp(self):
+        self.client = Client()
+        self.user = User.objects.create_user(username='apptuser', password='testpass123')
+        self.other_user = User.objects.create_user(username='otherappt', password='testpass123')
+        self.client.login(username='apptuser', password='testpass123')
+
+    def test_create_appointment_from_frontend(self):
+        response = self.client.post(reverse('book_appointment'), {
+            'title': 'Counseling Session',
+            'appointment_datetime': '2099-12-31T10:00',
+            'notes': 'Bring required documents',
+        })
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(Appointment.objects.filter(title='Counseling Session', created_by=self.user).exists())
+
+    def test_update_appointment_from_frontend(self):
+        appointment = Appointment.objects.create(
+            title='Initial Appointment',
+            appointment_datetime=timezone.now() + timedelta(days=10),
+            notes='Initial notes',
+            created_by=self.user,
+        )
+        response = self.client.post(reverse('edit_appointment', kwargs={'pk': appointment.pk}), {
+            'title': 'Updated Appointment',
+            'appointment_datetime': '2099-12-31T11:30',
+            'notes': 'Updated notes',
+        })
+        self.assertEqual(response.status_code, 302)
+        appointment.refresh_from_db()
+        self.assertEqual(appointment.title, 'Updated Appointment')
+
+    def test_delete_appointment_from_frontend(self):
+        appointment = Appointment.objects.create(
+            title='Appointment to Delete',
+            appointment_datetime=timezone.now() + timedelta(days=10),
+            created_by=self.user,
+        )
+        response = self.client.post(reverse('delete_appointment', kwargs={'pk': appointment.pk}))
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(Appointment.objects.filter(pk=appointment.pk).exists())
+
+    def test_cannot_delete_other_users_appointment(self):
+        appointment = Appointment.objects.create(
+            title='Protected Appointment',
+            appointment_datetime=timezone.now() + timedelta(days=10),
+            created_by=self.other_user,
+        )
+        response = self.client.post(reverse('delete_appointment', kwargs={'pk': appointment.pk}))
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(Appointment.objects.filter(pk=appointment.pk).exists())
+
+
+class BlogNewsFlowTest(TestCase):
+    """Tests for role-restricted news flow and blog comments."""
+
+    def setUp(self):
+        self.client = Client()
+        self.user = User.objects.create_user(username='writer', password='testpass123')
+        self.staff_user = User.objects.create_user(username='editor', password='testpass123', is_staff=True)
+        self.instructor_user = User.objects.create_user(username='instructor', password='testpass123')
+        instructor_group, _ = Group.objects.get_or_create(name='Instructor')
+        self.instructor_user.groups.add(instructor_group)
+        self.category = Category.objects.create(name='News', slug='news')
+        self.post = BlogPost.objects.create(
+            title='Published Story',
+            content='A' * 80,
+            author=self.staff_user,
+            category=self.category,
+            slug='published-story',
+            is_published=True,
+        )
+
+    def test_create_news_requires_login(self):
+        response = self.client.get(reverse('create_blog'))
+        self.assertEqual(response.status_code, 302)
+        self.assertIn(reverse('login'), response.url)
+
+    def test_non_role_user_cannot_create_news(self):
+        self.client.login(username='writer', password='testpass123')
+        response = self.client.post(reverse('create_blog'), {
+            'title': 'Community News Story',
+            'content': 'B' * 100,
+            'category': self.category.id,
+            'is_published': True,
+        })
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse('home'))
+        self.assertFalse(BlogPost.objects.filter(title='Community News Story').exists())
+
+    def test_instructor_can_create_news(self):
+        self.client.login(username='instructor', password='testpass123')
+        response = self.client.post(reverse('create_blog'), {
+            'title': 'Instructor News Story',
+            'content': 'B' * 100,
+            'category': self.category.id,
+            'is_published': True,
+        })
+        self.assertEqual(response.status_code, 302)
+        created = BlogPost.objects.get(title='Instructor News Story')
+        self.assertEqual(created.author, self.instructor_user)
+        self.assertFalse(created.is_published)
+
+    def test_post_comment_creates_blog_comment(self):
+        self.client.login(username='writer', password='testpass123')
+        response = self.client.post(
+            reverse('post_blog_comment', kwargs={'slug': self.post.slug}),
+            {'content': 'Great article and very helpful.'}
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(
+            BlogComment.objects.filter(blog_post=self.post, author=self.user, content='Great article and very helpful.').exists()
+        )
+
+    def test_upvote_creates_vote(self):
+        self.client.login(username='writer', password='testpass123')
+        response = self.client.post(reverse('vote_blog_post', kwargs={'slug': self.post.slug, 'vote_type': 'up'}))
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(BlogPostVote.objects.filter(blog_post=self.post, user=self.user, value=1).exists())
+
+    def test_repeating_same_vote_removes_vote(self):
+        self.client.login(username='writer', password='testpass123')
+        self.client.post(reverse('vote_blog_post', kwargs={'slug': self.post.slug, 'vote_type': 'up'}))
+        self.client.post(reverse('vote_blog_post', kwargs={'slug': self.post.slug, 'vote_type': 'up'}))
+        self.assertFalse(BlogPostVote.objects.filter(blog_post=self.post, user=self.user).exists())
+
+    def test_switch_vote_updates_value(self):
+        self.client.login(username='writer', password='testpass123')
+        self.client.post(reverse('vote_blog_post', kwargs={'slug': self.post.slug, 'vote_type': 'up'}))
+        self.client.post(reverse('vote_blog_post', kwargs={'slug': self.post.slug, 'vote_type': 'down'}))
+        vote = BlogPostVote.objects.get(blog_post=self.post, user=self.user)
+        self.assertEqual(vote.value, -1)
+
+
+class DatabaseHardeningConstraintsTest(TestCase):
+    """Tests for DB-level integrity constraints and appointment validation."""
+
+    def setUp(self):
+        self.user = User.objects.create_user(username='dbuser', password='testpass123')
+        self.category = Category.objects.create(name='Database', slug='database')
+        self.blog_post = BlogPost.objects.create(
+            title='DB Integrity Story',
+            content='C' * 120,
+            author=self.user,
+            category=self.category,
+            slug='db-integrity-story',
+            is_published=True,
+        )
+        self.question = ForumQuestion.objects.create(
+            title='How to normalize data?',
+            content='Need help with normalization strategy.',
+            author=self.user,
+            category=self.category,
+        )
+
+    def test_blog_vote_value_check_constraint(self):
+        with self.assertRaises(IntegrityError):
+            BlogPostVote.objects.create(blog_post=self.blog_post, user=self.user, value=0)
+
+    def test_only_one_accepted_answer_per_question(self):
+        ForumAnswer.objects.create(
+            question=self.question,
+            content='First accepted answer',
+            author=self.user,
+            is_accepted=True,
+        )
+
+        with self.assertRaises(IntegrityError):
+            ForumAnswer.objects.create(
+                question=self.question,
+                content='Second accepted answer',
+                author=self.user,
+                is_accepted=True,
+            )
+
+    def test_appointment_must_be_in_future_validation(self):
+        appointment = Appointment(
+            title='Past appointment',
+            notes='Invalid because it is in the past',
+            appointment_datetime=timezone.now() - timedelta(hours=2),
+            created_by=self.user,
+        )
+
+        with self.assertRaises(ValidationError):
+            appointment.full_clean()
 
 
 

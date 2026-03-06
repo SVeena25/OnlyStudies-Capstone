@@ -26,6 +26,8 @@ urlpatterns = [
         views.AppointmentCreateView.as_view(), name='book_appointment'),
     path('appointments/<int:pk>/edit/', 
         views.UpdateAppointmentView.as_view(), name='edit_appointment'),
+    path('appointments/<int:pk>/delete/',
+        views.DeleteAppointmentView.as_view(), name='delete_appointment'),
     path('search/', 
         views.SearchResultsView.as_view(), name='search'),
     path('category/<slug:category_slug>/', 
@@ -34,8 +36,14 @@ urlpatterns = [
         views.SubCategoryView.as_view(), name='subcategory'),
     
     # Blog
+    path('blog/create/',
+        views.CreateBlogPostView.as_view(), name='create_blog'),
     path('blog/<slug:slug>/', 
         views.BlogPostDetailView.as_view(), name='blog_detail'),
+    path('blog/<slug:slug>/comment/',
+        views.post_blog_comment, name='post_blog_comment'),
+    path('blog/<slug:slug>/vote/<str:vote_type>/',
+        views.vote_blog_post, name='vote_blog_post'),
     path('blog/<slug:slug>/edit/', 
         views.UpdateBlogPostView.as_view(), name='edit_blog'),
     path('blog/<slug:slug>/delete/', 

@@ -2,7 +2,7 @@ from django import forms
 from django.contrib import admin
 from django.contrib import messages
 from django.conf import settings
-from .models import Category, SubCategory, BlogPost, Notification, ForumQuestion, ForumAnswer, Task, Appointment
+from .models import Category, SubCategory, BlogPost, BlogComment, BlogPostVote, Notification, ForumQuestion, ForumAnswer, Task, Appointment
 from .forms import sanitize_cloudinary_image_link
 from cloudinary.exceptions import Error as CloudinaryError
 from cloudinary import uploader
@@ -56,6 +56,16 @@ class SubCategoryAdmin(admin.ModelAdmin):
     search_fields = ('name', 'category__name')
 
 
+class BlogCommentInline(admin.TabularInline):
+    """
+    Inline admin for blog comments
+    """
+    model = BlogComment
+    extra = 0
+    readonly_fields = ('author', 'created_at', 'updated_at')
+    fields = ('author', 'content', 'is_approved', 'created_at', 'updated_at')
+
+
 @admin.register(BlogPost)
 class BlogPostAdmin(admin.ModelAdmin):
     """
@@ -67,6 +77,7 @@ class BlogPostAdmin(admin.ModelAdmin):
     prepopulated_fields = {'slug': ('title',)}
     search_fields = ('title', 'content', 'author__username')
     readonly_fields = ('created_at', 'updated_at')
+    inlines = [BlogCommentInline]
     
     fields = ('title', 'slug', 'author', 'category', 'content', 'cloudinary_image_link', 'featured_image', 'is_published')
     
@@ -140,6 +151,30 @@ class BlogPostAdmin(admin.ModelAdmin):
                 'Post details were saved, but image upload failed. Please verify Cloudinary credentials.',
                 level=messages.WARNING,
             )
+
+
+@admin.register(BlogComment)
+class BlogCommentAdmin(admin.ModelAdmin):
+    """
+    Admin for BlogComment model
+    """
+    list_display = ('blog_post', 'author', 'is_approved', 'created_at')
+    list_filter = ('is_approved', 'created_at')
+    search_fields = ('blog_post__title', 'author__username', 'content')
+    readonly_fields = ('created_at', 'updated_at')
+    fields = ('blog_post', 'author', 'content', 'is_approved', 'created_at', 'updated_at')
+
+
+@admin.register(BlogPostVote)
+class BlogPostVoteAdmin(admin.ModelAdmin):
+    """
+    Admin for BlogPostVote model
+    """
+    list_display = ('blog_post', 'user', 'value', 'created_at')
+    list_filter = ('value', 'created_at')
+    search_fields = ('blog_post__title', 'user__username')
+    readonly_fields = ('created_at', 'updated_at')
+    fields = ('blog_post', 'user', 'value', 'created_at', 'updated_at')
 
 
 @admin.register(Notification)

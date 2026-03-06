@@ -1,7 +1,7 @@
 {% extends 'core/base.html' %}
 {% load static %}
 
-{% block title %}Delete Blog Post - Confirm{% endblock %}
+{% block title %}Delete Blog Post{% endblock %}
 
 {% block content %}
 <div class="container mt-5 mb-5">
@@ -12,31 +12,23 @@
                     <h3 class="mb-0"><i class="bi bi-exclamation-triangle-fill me-2"></i>Delete Blog Post</h3>
                 </div>
                 <div class="card-body">
-                    <div class="alert alert-warning" role="alert">
-                        <i class="bi bi-info-circle me-2"></i>
-                        <strong>Warning:</strong> This action cannot be undone!
-                    </div>
-                    
-                    <p class="text-muted mb-4">
-                        Are you sure you want to permanently delete this blog post?
+                    <p class="mb-2">
+                        Are you sure you want to delete this post?
                     </p>
-                    
-                    <div class="card mb-4 bg-light">
-                        <div class="card-body">
-                            <h6 class="card-title">{{ object.title }}</h6>
-                            <p class="card-text text-muted small">
-                                {{ object.content|truncatewords:30 }}
-                            </p>
-                        </div>
+                    <p class="text-muted small mb-3">This action cannot be undone.</p>
+
+                    <div class="mb-4 p-3 bg-light rounded border">
+                        <h6 class="mb-1">{{ object.title }}</h6>
+                        <p class="text-muted small mb-0">{{ object.content|truncatewords:30 }}</p>
                     </div>
 
                     <form method="post" class="d-flex gap-2">
                         {% csrf_token %}
                         <button type="submit" class="btn btn-danger flex-grow-1">
-                            <i class="bi bi-trash me-2"></i>Yes, Delete Permanently
+                            <i class="bi bi-trash me-2"></i>Delete
                         </button>
-                        <a href="{% url 'blog_detail' object.slug %}" class="btn btn-secondary flex-grow-1">
-                            <i class="bi bi-arrow-left me-2"></i>Cancel
+                        <a href="{% url 'blog_detail' object.slug %}" class="btn btn-outline-secondary flex-grow-1">
+                            Cancel
                         </a>
                     </form>
                 </div>

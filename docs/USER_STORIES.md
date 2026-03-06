@@ -217,3 +217,8 @@ Could-Have:   Advanced/Nice features (Users 018-032)
 - Video Lectures: ❌ Not started
 - Gamification: ❌ Not started
 - Social Features: ❌ Not started
+
+## Agile Mapping Evidence
+- Full story-to-code traceability matrix: `docs/agile/AGILE_USER_STORY_TRACEABILITY.md`
+- Agile board import file (CSV): `docs/agile/USER_STORIES_BOARD_IMPORT.csv`
+- Tool mapping and setup guide: `docs/agile/AGILE_TOOL_MAPPING_GUIDE.md`
