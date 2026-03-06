@@ -13,11 +13,16 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 from pathlib import Path
 import os
 import dj_database_url
+from django.core.exceptions import ImproperlyConfigured
+from django.core.management.utils import get_random_secret_key
 from urllib.parse import urlparse, unquote
 import cloudinary
 
-if os.path.isfile("env.py"):
-   import env
+IS_PRODUCTION = bool(os.environ.get('DYNO'))
+
+# Load local env helpers only for non-production environments.
+if not IS_PRODUCTION and os.path.isfile("env.py"):
+    import env
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -29,14 +34,18 @@ TEMPLATES_DIR = os.path.join(BASE_DIR, 'templates')
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-# Local fallback keeps development usable when environment variables are missing.
-SECRET_KEY = os.environ.get('SECRET_KEY', 'dev-insecure-secret-key-onlystudies')
+SECRET_KEY = os.environ.get('SECRET_KEY')
+if not SECRET_KEY and IS_PRODUCTION:
+    raise ImproperlyConfigured('SECRET_KEY must be set securely in production environment variables.')
+if not SECRET_KEY:
+    SECRET_KEY = get_random_secret_key()
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = str(os.environ.get('DEBUG', 'False')).strip().lower() in {'1', 'true', 'yes', 'on'}
+if IS_PRODUCTION:
+    DEBUG = False
 
 database_url = os.environ.get("DATABASE_URL")
-IS_PRODUCTION = bool(os.environ.get('DYNO'))
 
 # Allow local dev and common loopback hosts; add prod domains as needed
 ALLOWED_HOSTS = ["localhost", 
@@ -106,7 +115,9 @@ WSGI_APPLICATION = 'only_studies.wsgi.application'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
 DATABASES = {
-   'default': dj_database_url.parse(os.environ.get("DATABASE_URL"))
+    'default': dj_database_url.parse(
+         os.environ.get("DATABASE_URL", f"sqlite:///{BASE_DIR / 'db.sqlite3'}")
+    )
 }
 
 
