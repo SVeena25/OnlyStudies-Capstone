@@ -3,31 +3,48 @@ from django.contrib.auth.models import Group
 from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
-from .models import ForumQuestion, ForumAnswer, Appointment, BlogPost, BlogComment, Task
+from .models import (
+    ForumQuestion,
+    ForumAnswer,
+    Appointment,
+    BlogPost,
+    BlogComment,
+    Task,
+)
 
 
 def sanitize_cloudinary_image_link(value):
-    """Validate a Cloudinary import URL and reject concatenated/multiple URLs."""
+    """Validate Cloudinary import URL and reject concatenated URLs."""
     cleaned = (value or '').strip()
     if not cleaned:
         return ''
 
     first_http = cleaned.find('http://')
     first_https = cleaned.find('https://')
-    starts_with_url = cleaned.startswith('http://') or cleaned.startswith('https://')
+    starts_with_url = cleaned.startswith(
+        'http://') or cleaned.startswith('https://')
 
     if not starts_with_url:
-        raise ValidationError('Please enter a valid URL starting with http:// or https://.')
+        raise ValidationError(
+            'Please enter a valid URL starting with http:// or https://.')
 
     # Detect accidental concatenation such as ...jpghttps://example.com
     second_http = cleaned.find('http://', 7)
     second_https = cleaned.find('https://', 8)
     if second_http != -1 or second_https != -1:
-        raise ValidationError('Please provide only one image URL. It looks like multiple URLs were pasted together.')
+        raise ValidationError(
+            (
+                'Please provide only one image URL. It looks like multiple '
+                'URLs were pasted together.'
+            ))
 
     # Avoid common copy/paste issue where extra text is appended after the URL.
     if ' ' in cleaned or '\n' in cleaned or '\r' in cleaned:
-        raise ValidationError('Cloudinary Image Link must contain only one URL with no extra text.')
+        raise ValidationError(
+            (
+                'Cloudinary Image Link must contain only one URL with no '
+                'extra text.'
+            ))
 
     return cleaned
 
@@ -59,7 +76,10 @@ class SignUpForm(forms.ModelForm):
             'placeholder': 'Password',
             'required': True
         }),
-        help_text="Password must be at least 8 characters long and contain uppercase, lowercase, and numbers."
+        help_text=(
+            'Password must be at least 8 characters long and contain '
+            'uppercase, lowercase, and numbers.'
+        )
     )
     password_confirm = forms.CharField(
         widget=forms.PasswordInput(attrs={
@@ -102,7 +122,8 @@ class SignUpForm(forms.ModelForm):
         if User.objects.filter(username=username).exists():
             raise ValidationError("This username is already taken.")
         if len(username) < 3:
-            raise ValidationError("Username must be at least 3 characters long.")
+            raise ValidationError(
+                "Username must be at least 3 characters long.")
         return username
 
     def clean_email(self):
@@ -140,7 +161,11 @@ class SignUpForm(forms.ModelForm):
         user.set_password(password)
         if commit:
             user.save()
-            group_name = 'Instructor' if selected_role == self.ROLE_INSTRUCTOR else 'Student'
+            group_name = (
+                'Instructor'
+                if selected_role == self.ROLE_INSTRUCTOR
+                else 'Student'
+            )
             role_group, _ = Group.objects.get_or_create(name=group_name)
             user.groups.add(role_group)
         return user
@@ -178,14 +203,16 @@ class ForumQuestionForm(forms.ModelForm):
         """Validate title"""
         title = self.cleaned_data.get('title')
         if len(title) < 10:
-            raise ValidationError("Question title must be at least 10 characters long.")
+            raise ValidationError(
+                "Question title must be at least 10 characters long.")
         return title
 
     def clean_content(self):
         """Validate content"""
         content = self.cleaned_data.get('content')
         if len(content) < 20:
-            raise ValidationError("Question content must be at least 20 characters long.")
+            raise ValidationError(
+                "Question content must be at least 20 characters long.")
         return content
 
 
@@ -209,7 +236,8 @@ class ForumAnswerForm(forms.ModelForm):
         """Validate content"""
         content = self.cleaned_data.get('content')
         if len(content) < 10:
-            raise ValidationError("Answer must be at least 10 characters long.")
+            raise ValidationError(
+                "Answer must be at least 10 characters long.")
         return content
 
 
@@ -286,18 +314,21 @@ class BlogPostForm(forms.ModelForm):
         """Validate title"""
         title = self.cleaned_data.get('title')
         if len(title) < 5:
-            raise ValidationError("Blog post title must be at least 5 characters long.")
+            raise ValidationError(
+                "Blog post title must be at least 5 characters long.")
         return title
 
     def clean_content(self):
         """Validate content"""
         content = self.cleaned_data.get('content')
         if len(content) < 50:
-            raise ValidationError("Blog post content must be at least 50 characters long.")
+            raise ValidationError(
+                "Blog post content must be at least 50 characters long.")
         return content
 
     def clean_cloudinary_image_link(self):
-        return sanitize_cloudinary_image_link(self.cleaned_data.get('cloudinary_image_link'))
+        return sanitize_cloudinary_image_link(
+            self.cleaned_data.get('cloudinary_image_link'))
 
 
 class BlogCommentForm(forms.ModelForm):
@@ -319,7 +350,8 @@ class BlogCommentForm(forms.ModelForm):
     def clean_content(self):
         content = (self.cleaned_data.get('content') or '').strip()
         if len(content) < 3:
-            raise ValidationError('Comment must be at least 3 characters long.')
+            raise ValidationError(
+                'Comment must be at least 3 characters long.')
         return content
 
 
@@ -357,5 +389,6 @@ class TaskForm(forms.ModelForm):
         """Validate title"""
         title = self.cleaned_data.get('title')
         if len(title) < 3:
-            raise ValidationError("Task title must be at least 3 characters long.")
+            raise ValidationError(
+                "Task title must be at least 3 characters long.")
         return title

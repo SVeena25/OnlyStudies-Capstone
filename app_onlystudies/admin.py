@@ -2,7 +2,18 @@ from django import forms
 from django.contrib import admin
 from django.contrib import messages
 from django.conf import settings
-from .models import Category, SubCategory, BlogPost, BlogComment, BlogPostVote, Notification, ForumQuestion, ForumAnswer, Task, Appointment
+from .models import (
+    Category,
+    SubCategory,
+    BlogPost,
+    BlogComment,
+    BlogPostVote,
+    Notification,
+    ForumQuestion,
+    ForumAnswer,
+    Task,
+    Appointment,
+)
 from .forms import sanitize_cloudinary_image_link
 from cloudinary.exceptions import Error as CloudinaryError
 from cloudinary import uploader
@@ -13,8 +24,12 @@ class BlogPostAdminForm(forms.ModelForm):
     cloudinary_image_link = forms.URLField(
         required=False,
         label='Cloudinary Image Link',
-        help_text='Paste a public image URL to import it into Cloudinary. Leave empty to use the Choose file upload below.',
-        widget=forms.URLInput(attrs={'placeholder': 'https://example.com/image.jpg'}),
+        help_text=(
+            'Paste a public image URL to import it into Cloudinary. '
+            'Leave empty to use the Choose file upload below.'
+        ),
+        widget=forms.URLInput(
+            attrs={'placeholder': 'https://example.com/image.jpg'}),
     )
 
     class Meta:
@@ -22,7 +37,8 @@ class BlogPostAdminForm(forms.ModelForm):
         fields = '__all__'
 
     def clean_cloudinary_image_link(self):
-        return sanitize_cloudinary_image_link(self.cleaned_data.get('cloudinary_image_link'))
+        return sanitize_cloudinary_image_link(
+            self.cleaned_data.get('cloudinary_image_link'))
 
 
 class SubCategoryInline(admin.TabularInline):
@@ -72,15 +88,17 @@ class BlogPostAdmin(admin.ModelAdmin):
     Admin for BlogPost model
     """
     form = BlogPostAdminForm
-    list_display = ('title', 'author', 'category', 'is_published', 'created_at')
+    list_display = ('title', 'author', 'category',
+                    'is_published', 'created_at')
     list_filter = ('is_published', 'category', 'created_at')
     prepopulated_fields = {'slug': ('title',)}
     search_fields = ('title', 'content', 'author__username')
     readonly_fields = ('created_at', 'updated_at')
     inlines = [BlogCommentInline]
-    
-    fields = ('title', 'slug', 'author', 'category', 'content', 'cloudinary_image_link', 'featured_image', 'is_published')
-    
+
+    fields = ('title', 'slug', 'author', 'category', 'content',
+              'cloudinary_image_link', 'featured_image', 'is_published')
+
     def get_fields(self, request, obj=None):
         """
         Show timestamps only when editing
@@ -94,18 +112,23 @@ class BlogPostAdmin(admin.ModelAdmin):
         original_image = None
         if change:
             try:
-                original_image = BlogPost.objects.only('featured_image').get(pk=obj.pk).featured_image
+                original_image = BlogPost.objects.only(
+                    'featured_image').get(pk=obj.pk).featured_image
             except BlogPost.DoesNotExist:
                 original_image = None
 
-        cloudinary_image_link = (form.cleaned_data.get('cloudinary_image_link') or '').strip()
+        cloudinary_image_link = (form.cleaned_data.get(
+            'cloudinary_image_link') or '').strip()
         has_uploaded_file = 'featured_image' in request.FILES
 
         # If both are provided, prefer the uploaded file and skip remote fetch.
         if has_uploaded_file and cloudinary_image_link:
             self.message_user(
                 request,
-                'Both Cloudinary Image Link and Choose file were provided. Using the uploaded file.',
+                (
+                    'Both Cloudinary Image Link and Choose file were '
+                    'provided. Using the uploaded file.'
+                ),
                 level=messages.INFO,
             )
             cloudinary_image_link = ''
@@ -118,19 +141,29 @@ class BlogPostAdmin(admin.ModelAdmin):
                 str(cloudinary_config.get('API_SECRET', '')),
                 str(getattr(settings, 'CLOUDINARY_URL', '')),
             ]
-            has_placeholder_credentials = any('<' in value and '>' in value for value in cloudinary_values if value)
+            has_placeholder_credentials = any(
+                '<' in value and '>' in value
+                for value in cloudinary_values
+                if value
+            )
 
             if has_placeholder_credentials:
                 self.message_user(
                     request,
-                    'Cloudinary credentials look like placeholders. Update CLOUDINARY_URL or split Cloudinary env vars before importing external images.',
+                    (
+                        'Cloudinary credentials look like placeholders. '
+                        'Update CLOUDINARY_URL or split Cloudinary env vars '
+                        'before importing external images.'
+                    ),
                     level=messages.WARNING,
                 )
                 return super().save_model(request, obj, form, change)
 
             try:
-                # Let Cloudinary fetch and store the remote image, then persist public_id.
-                upload_result = uploader.upload(cloudinary_image_link, folder='blog')
+                # Let Cloudinary fetch and store the remote image, then persist
+                # public_id.
+                upload_result = uploader.upload(
+                    cloudinary_image_link, folder='blog')
                 public_id = upload_result.get('public_id')
                 if public_id:
                     obj.featured_image = public_id
@@ -148,7 +181,10 @@ class BlogPostAdmin(admin.ModelAdmin):
             obj.save()
             self.message_user(
                 request,
-                'Post details were saved, but image upload failed. Please verify Cloudinary credentials.',
+                (
+                    'Post details were saved, but image upload failed. '
+                    'Please verify Cloudinary credentials.'
+                ),
                 level=messages.WARNING,
             )
 
@@ -162,7 +198,8 @@ class BlogCommentAdmin(admin.ModelAdmin):
     list_filter = ('is_approved', 'created_at')
     search_fields = ('blog_post__title', 'author__username', 'content')
     readonly_fields = ('created_at', 'updated_at')
-    fields = ('blog_post', 'author', 'content', 'is_approved', 'created_at', 'updated_at')
+    fields = ('blog_post', 'author', 'content',
+              'is_approved', 'created_at', 'updated_at')
 
 
 @admin.register(BlogPostVote)
@@ -182,7 +219,8 @@ class NotificationAdmin(admin.ModelAdmin):
     """
     Admin for Notification model
     """
-    list_display = ('user', 'title', 'notification_type', 'is_read', 'created_at')
+    list_display = ('user', 'title', 'notification_type',
+                    'is_read', 'created_at')
     list_filter = ('notification_type', 'is_read', 'created_at')
     search_fields = ('user__username', 'title', 'message')
     fieldsets = (
@@ -217,12 +255,13 @@ class ForumQuestionAdmin(admin.ModelAdmin):
     """
     Admin for ForumQuestion model
     """
-    list_display = ('title', 'author', 'category', 'is_answered', 'views', 'created_at')
+    list_display = ('title', 'author', 'category',
+                    'is_answered', 'views', 'created_at')
     list_filter = ('is_answered', 'category', 'created_at')
     search_fields = ('title', 'content', 'author__username')
     readonly_fields = ('slug', 'views', 'created_at', 'updated_at')
     inlines = [ForumAnswerInline]
-    
+
     fieldsets = (
         ('Question Information', {
             'fields': ('title', 'slug', 'author', 'category')
@@ -249,7 +288,7 @@ class ForumAnswerAdmin(admin.ModelAdmin):
     list_filter = ('is_accepted', 'created_at')
     search_fields = ('content', 'author__username', 'question__title')
     readonly_fields = ('created_at', 'updated_at')
-    
+
     fieldsets = (
         ('Answer Information', {
             'fields': ('question', 'author', 'is_accepted')
@@ -269,11 +308,13 @@ class TaskAdmin(admin.ModelAdmin):
     """
     Admin for Task model
     """
-    list_display = ('title', 'created_by', 'category', 'priority', 'due_date', 'created_at')
+    list_display = ('title', 'created_by', 'category',
+                    'priority', 'due_date', 'created_at')
     list_filter = ('priority', 'category', 'due_date', 'created_at')
     search_fields = ('title', 'description', 'created_by__username')
     readonly_fields = ('created_at',)
-    fields = ('title', 'description', 'category', 'priority', 'due_date', 'created_by')
+    fields = ('title', 'description', 'category',
+              'priority', 'due_date', 'created_by')
 
 
 @admin.register(Appointment)
@@ -281,10 +322,9 @@ class AppointmentAdmin(admin.ModelAdmin):
     """
     Admin for Appointment model
     """
-    list_display = ('title', 'created_by', 'appointment_datetime', 'created_at')
+    list_display = ('title', 'created_by',
+                    'appointment_datetime', 'created_at')
     list_filter = ('appointment_datetime', 'created_at')
     search_fields = ('title', 'notes', 'created_by__username')
     readonly_fields = ('created_at',)
     fields = ('title', 'notes', 'appointment_datetime', 'created_by')
-
-

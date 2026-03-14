@@ -1,6 +1,13 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.db.models import Q
-from django.views.generic import TemplateView, CreateView, ListView, DetailView, DeleteView, UpdateView
+from django.views.generic import (
+    TemplateView,
+    CreateView,
+    ListView,
+    DetailView,
+    DeleteView,
+    UpdateView,
+)
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.contrib.auth.views import LoginView, LogoutView
@@ -15,8 +22,27 @@ from django.utils.text import slugify
 from cloudinary.exceptions import Error as CloudinaryError
 from cloudinary import uploader
 from cloudinary.utils import cloudinary_url
-from .forms import SignUpForm, ForumQuestionForm, ForumAnswerForm, AppointmentForm, BlogPostForm, BlogCommentForm, TaskForm
-from .models import Category, SubCategory, BlogPost, BlogComment, BlogPostVote, Notification, ForumQuestion, ForumAnswer, Task, Appointment
+from .forms import (
+    SignUpForm,
+    ForumQuestionForm,
+    ForumAnswerForm,
+    AppointmentForm,
+    BlogPostForm,
+    BlogCommentForm,
+    TaskForm,
+)
+from .models import (
+    Category,
+    SubCategory,
+    BlogPost,
+    BlogComment,
+    BlogPostVote,
+    Notification,
+    ForumQuestion,
+    ForumAnswer,
+    Task,
+    Appointment,
+)
 
 
 def _safe_blog_image_url(image_field):
@@ -34,8 +60,10 @@ def _safe_blog_image_url(image_field):
     is_production = getattr(settings, 'IS_PRODUCTION', False)
     has_cloudinary_storage = getattr(settings, 'HAS_CLOUDINARY_STORAGE', False)
 
-    # Legacy values like blog/logo.png came from local media usage; prefer static fallback.
-    filename = image_name.rsplit('/', 1)[-1] if '/' in image_name else image_name
+    # Legacy values like blog/logo.png came from local media usage; prefer
+    # static fallback.
+    filename = image_name.rsplit(
+        '/', 1)[-1] if '/' in image_name else image_name
     if image_name.startswith('blog/') and filename and '.' in filename:
         return f'/static/img/{filename}'
 
@@ -51,23 +79,32 @@ def _safe_blog_image_url(image_field):
         except Exception:
             image_url = ''
 
-    # Some invalid values are rendered as /media/https://... by storage backends.
+    # Some invalid values are rendered as /media/https://... by storage
+    # backends.
     # Prefer the original absolute URL when available.
-    if image_url.startswith('/media/http://') or image_url.startswith('/media/https://'):
-        if image_name.startswith('http://') or image_name.startswith('https://'):
+    if image_url.startswith(
+            '/media/http://') or image_url.startswith('/media/https://'):
+        if (
+            image_name.startswith('http://')
+            or image_name.startswith('https://')
+        ):
             return image_name
         return fallback
 
     if is_production:
-        # Legacy DB rows can still store local media paths like "blog/logo.png".
-        # In production those files are unavailable, so prefer matching static assets.
+        # Legacy DB rows can still store local media paths like
+        # "blog/logo.png".
+        # In production those files are unavailable, so prefer matching static
+        # assets.
         if image_name.startswith('blog/'):
             filename = image_name.rsplit('/', 1)[-1]
-            # Only treat legacy filename values (with extension) as local static assets.
+            # Only treat legacy filename values (with extension) as local
+            # static assets.
             if filename and '.' in filename:
                 return f'/static/img/{filename}'
 
-        # In production, avoid broken local-media paths and non-Cloudinary remote URLs.
+        # In production, avoid broken local-media paths and non-Cloudinary
+        # remote URLs.
         if image_url.startswith('/media/'):
             filename = image_url.rsplit('/', 1)[-1]
             if filename:
@@ -89,7 +126,8 @@ class HomePage(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        posts = BlogPost.objects.filter(is_published=True).select_related('author', 'category')[:6]
+        posts = BlogPost.objects.filter(
+            is_published=True).select_related('author', 'category')[:6]
         for post in posts:
             post.display_image_url = _safe_blog_image_url(post.featured_image)
         context['home_blog_posts'] = posts
@@ -105,7 +143,8 @@ class AboutView(TemplateView):
 
 class TaskListView(LoginRequiredMixin, ListView):
     """
-    List view for tasks with filtering and sorting by due date, priority, and category.
+    List view for tasks with filtering and sorting by due date,
+    priority, and category.
     """
     model = Task
     template_name = 'tasks/tasks.html'
@@ -114,7 +153,8 @@ class TaskListView(LoginRequiredMixin, ListView):
     login_url = reverse_lazy('login')
 
     def get_queryset(self):
-        qs = Task.objects.filter(created_by=self.request.user).select_related('category')
+        qs = Task.objects.filter(
+            created_by=self.request.user).select_related('category')
 
         # Filters
         category_slug = self.request.GET.get('category')
@@ -204,7 +244,8 @@ class DeleteTaskView(LoginRequiredMixin, DeleteView):
     def dispatch(self, request, *args, **kwargs):
         obj = self.get_object()
         if obj.created_by != request.user:
-            messages.error(request, 'You do not have permission to delete this task.')
+            messages.error(
+                request, 'You do not have permission to delete this task.')
             return redirect('tasks')
         return super().dispatch(request, *args, **kwargs)
 
@@ -314,17 +355,17 @@ class CategoryView(TemplateView):
     Display content filtered by category
     """
     template_name = 'categories/category.html'
-    
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         category_slug = self.kwargs.get('category_slug')
         category = get_object_or_404(Category, slug=category_slug)
         subcategories = category.subcategories.all()
-        
+
         context['category'] = category
         context['subcategories'] = subcategories
         context['page_title'] = f'{category.name} - OnlyStudies'
-        
+
         return context
 
 
@@ -333,19 +374,20 @@ class SubCategoryView(TemplateView):
     Display content filtered by subcategory
     """
     template_name = 'categories/subcategory.html'
-    
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         category_slug = self.kwargs.get('category_slug')
         subcategory_slug = self.kwargs.get('subcategory_slug')
-        
+
         category = get_object_or_404(Category, slug=category_slug)
-        subcategory = get_object_or_404(SubCategory, category=category, slug=subcategory_slug)
-        
+        subcategory = get_object_or_404(
+            SubCategory, category=category, slug=subcategory_slug)
+
         context['category'] = category
         context['subcategory'] = subcategory
         context['page_title'] = f'{subcategory.name} - OnlyStudies'
-        
+
         return context
 
 
@@ -357,7 +399,7 @@ def blog_feed_api(request):
     """
     blog_posts = BlogPost.objects.filter(is_published=True)[:5]
     blog_data = []
-    
+
     for post in blog_posts:
         featured_image_url = _safe_blog_image_url(post.featured_image)
 
@@ -371,7 +413,7 @@ def blog_feed_api(request):
             'created_at': post.created_at.isoformat(),
             'slug': post.slug,
         })
-    
+
     return JsonResponse({'blogs': blog_data})
 
 
@@ -383,11 +425,12 @@ def notifications_api(request):
     if not request.user.is_authenticated:
         # Require authentication for notifications API
         return JsonResponse({'detail': 'Authentication required'}, status=401)
-    
+
     try:
-        notifications = Notification.objects.filter(user=request.user, is_read=False).order_by('-created_at')[:5]
+        notifications = Notification.objects.filter(
+            user=request.user, is_read=False).order_by('-created_at')[:5]
         notifications_data = []
-        
+
         for notification in notifications:
             notifications_data.append({
                 'id': notification.id,
@@ -398,7 +441,7 @@ def notifications_api(request):
                 'created_at': notification.created_at.isoformat(),
                 'url': notification.related_url,
             })
-        
+
         return JsonResponse({'notifications': notifications_data})
     except Exception as e:
         return JsonResponse({'notifications': [], 'error': str(e)})
@@ -412,7 +455,8 @@ class NotificationsView(LoginRequiredMixin, ListView):
     paginate_by = 20
 
     def get_queryset(self):
-        return Notification.objects.filter(user=self.request.user).order_by('-created_at')
+        return Notification.objects.filter(
+            user=self.request.user).order_by('-created_at')
 
 
 class BlogPostDetailView(DetailView):
@@ -424,19 +468,23 @@ class BlogPostDetailView(DetailView):
     context_object_name = 'post'
     slug_field = 'slug'
     slug_url_kwarg = 'slug'
-    
+
     def get_queryset(self):
         """Return only published blog posts"""
-        return BlogPost.objects.filter(is_published=True).select_related('author', 'category')
-    
+        return BlogPost.objects.filter(
+            is_published=True).select_related(
+            'author', 'category')
+
     def get_context_data(self, **kwargs):
         """Add additional context"""
         context = super().get_context_data(**kwargs)
         context['page_title'] = context['post'].title
         context['is_production'] = getattr(settings, 'IS_PRODUCTION', False)
-        context['has_cloudinary_storage'] = getattr(settings, 'HAS_CLOUDINARY_STORAGE', False)
-        context['post_image_url'] = _safe_blog_image_url(context['post'].featured_image)
-        
+        context['has_cloudinary_storage'] = getattr(
+            settings, 'HAS_CLOUDINARY_STORAGE', False)
+        context['post_image_url'] = _safe_blog_image_url(
+            context['post'].featured_image)
+
         # Get related posts from the same category (exclude current post)
         post = context['post']
         related_posts = BlogPost.objects.filter(
@@ -445,20 +493,23 @@ class BlogPostDetailView(DetailView):
         ).exclude(id=post.id).select_related('author', 'category')[:4]
 
         for related_post in related_posts:
-            related_post.display_image_url = _safe_blog_image_url(related_post.featured_image)
+            related_post.display_image_url = _safe_blog_image_url(
+                related_post.featured_image)
 
         context['related_posts'] = related_posts
-        context['comments'] = post.comments.filter(is_approved=True).select_related('author')
+        context['comments'] = post.comments.filter(
+            is_approved=True).select_related('author')
         context['comment_form'] = BlogCommentForm()
         context['upvote_count'] = post.upvote_count
         context['downvote_count'] = post.downvote_count
         context['vote_score'] = post.vote_score
         context['current_user_vote'] = 0
         if self.request.user.is_authenticated:
-            existing_vote = BlogPostVote.objects.filter(blog_post=post, user=self.request.user).first()
+            existing_vote = BlogPostVote.objects.filter(
+                blog_post=post, user=self.request.user).first()
             if existing_vote:
                 context['current_user_vote'] = existing_vote.value
-        
+
         return context
 
 
@@ -481,14 +532,17 @@ class CreateBlogPostView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
 
     def handle_no_permission(self):
         if not self.request.user.is_authenticated:
-            return redirect(f"{reverse_lazy('login')}?next={self.request.path}")
-        messages.error(self.request, 'You do not have permission to create news stories.')
+            return redirect(
+                f"{reverse_lazy('login')}?next={self.request.path}")
+        messages.error(
+            self.request, 'You do not have permission to create news stories.')
         return redirect('home')
 
     def form_valid(self, form):
         form.instance.author = self.request.user
 
-        base_slug = slugify(form.cleaned_data.get('title', 'news-story')) or 'news-story'
+        base_slug = slugify(form.cleaned_data.get(
+            'title', 'news-story')) or 'news-story'
         slug = base_slug
         counter = 1
         while BlogPost.objects.filter(slug=slug).exists():
@@ -496,34 +550,51 @@ class CreateBlogPostView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
             counter += 1
         form.instance.slug = slug
 
-        cloudinary_image_link = (form.cleaned_data.get('cloudinary_image_link') or '').strip()
+        cloudinary_image_link = (form.cleaned_data.get(
+            'cloudinary_image_link') or '').strip()
         if cloudinary_image_link:
             try:
-                upload_result = uploader.upload(cloudinary_image_link, folder='blog')
+                upload_result = uploader.upload(
+                    cloudinary_image_link, folder='blog')
                 public_id = upload_result.get('public_id')
                 if public_id:
                     form.instance.featured_image = public_id
             except Exception as exc:
-                messages.warning(self.request, f'Post will be saved, but image import failed: {exc}')
+                messages.warning(
+                    self.request,
+                    f'Post will be saved, but image import failed: {exc}')
 
         # Only staff/superusers can publish immediately.
         if not (self.request.user.is_staff or self.request.user.is_superuser):
             form.instance.is_published = False
-            messages.info(self.request, 'Story submitted successfully. It is pending review before publication.')
+            messages.info(
+                self.request,
+                (
+                    'Story submitted successfully. It is pending review '
+                    'before publication.'
+                ),
+            )
         else:
-            messages.success(self.request, 'Your news story has been published successfully!')
+            messages.success(
+                self.request,
+                'Your news story has been published successfully!')
 
         return super().form_valid(form)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['page_title'] = 'Create News Story'
-        context['can_publish'] = self.request.user.is_staff or self.request.user.is_superuser
+        context['can_publish'] = (
+            self.request.user.is_staff
+            or self.request.user.is_superuser
+        )
         return context
 
     def get_success_url(self):
         if self.object.is_published:
-            return reverse_lazy('blog_detail', kwargs={'slug': self.object.slug})
+            return reverse_lazy(
+                'blog_detail', kwargs={
+                    'slug': self.object.slug})
         return reverse_lazy('home')
 
 
@@ -536,7 +607,8 @@ def post_blog_comment(request, slug):
         messages.error(request, 'You must be logged in to post a comment.')
         return redirect(f"{reverse_lazy('login')}?next={request.path}")
 
-    post = get_object_or_404(BlogPost.objects.filter(is_published=True), slug=slug)
+    post = get_object_or_404(
+        BlogPost.objects.filter(is_published=True), slug=slug)
     form = BlogCommentForm(request.POST)
 
     if form.is_valid():
@@ -546,7 +618,8 @@ def post_blog_comment(request, slug):
         comment.save()
         messages.success(request, 'Your comment has been posted.')
     else:
-        messages.error(request, 'Please enter a valid comment (at least 3 characters).')
+        messages.error(
+            request, 'Please enter a valid comment (at least 3 characters).')
 
     return redirect('blog_detail', slug=slug)
 
@@ -560,14 +633,18 @@ def vote_blog_post(request, slug, vote_type):
         messages.error(request, 'You must be logged in to vote.')
         return redirect(f"{reverse_lazy('login')}?next={request.path}")
 
-    post = get_object_or_404(BlogPost.objects.filter(is_published=True), slug=slug)
-    vote_value = BlogPostVote.UPVOTE if vote_type == 'up' else BlogPostVote.DOWNVOTE
+    post = get_object_or_404(
+        BlogPost.objects.filter(is_published=True), slug=slug)
+    vote_value = (
+        BlogPostVote.UPVOTE if vote_type == 'up' else BlogPostVote.DOWNVOTE
+    )
 
     if vote_type not in {'up', 'down'}:
         messages.error(request, 'Invalid vote action.')
         return redirect('blog_detail', slug=slug)
 
-    existing_vote = BlogPostVote.objects.filter(blog_post=post, user=request.user).first()
+    existing_vote = BlogPostVote.objects.filter(
+        blog_post=post, user=request.user).first()
 
     if existing_vote and existing_vote.value == vote_value:
         existing_vote.delete()
@@ -577,7 +654,8 @@ def vote_blog_post(request, slug, vote_type):
         existing_vote.save(update_fields=['value', 'updated_at'])
         messages.success(request, 'Your vote was updated.')
     else:
-        BlogPostVote.objects.create(blog_post=post, user=request.user, value=vote_value)
+        BlogPostVote.objects.create(
+            blog_post=post, user=request.user, value=vote_value)
         messages.success(request, 'Your vote was recorded.')
 
     return redirect('blog_detail', slug=slug)
@@ -591,11 +669,12 @@ class ForumView(ListView):
     template_name = 'forum/forum.html'
     context_object_name = 'questions'
     paginate_by = 15
-    
+
     def get_queryset(self):
         """Return forum questions with related data"""
-        return ForumQuestion.objects.select_related('author', 'category').prefetch_related('answers')
-    
+        return ForumQuestion.objects.select_related(
+            'author', 'category').prefetch_related('answers')
+
     def get_context_data(self, **kwargs):
         """Add additional context"""
         context = super().get_context_data(**kwargs)
@@ -611,14 +690,14 @@ class ForumQuestionDetailView(DetailView):
     model = ForumQuestion
     template_name = 'forum/forum_question.html'
     context_object_name = 'question'
-    
+
     def get_object(self):
         """Get question and increment view count"""
         question = get_object_or_404(ForumQuestion, slug=self.kwargs['slug'])
         question.views += 1
         question.save(update_fields=['views'])
         return question
-    
+
     def get_context_data(self, **kwargs):
         """Add additional context"""
         context = super().get_context_data(**kwargs)
@@ -636,17 +715,20 @@ class AskQuestionView(LoginRequiredMixin, CreateView):
     form_class = ForumQuestionForm
     template_name = 'forum/ask_question.html'
     login_url = reverse_lazy('login')
-    
+
     def form_valid(self, form):
         """Set the author to the current user"""
         form.instance.author = self.request.user
-        messages.success(self.request, 'Your question has been posted successfully!')
+        messages.success(
+            self.request, 'Your question has been posted successfully!')
         return super().form_valid(form)
-    
+
     def get_success_url(self):
         """Redirect to the question detail page"""
-        return reverse_lazy('forum_question', kwargs={'slug': self.object.slug})
-    
+        return reverse_lazy(
+            'forum_question', kwargs={
+                'slug': self.object.slug})
+
     def get_context_data(self, **kwargs):
         """Add additional context"""
         context = super().get_context_data(**kwargs)
@@ -665,7 +747,8 @@ class AppointmentListView(LoginRequiredMixin, ListView):
     login_url = reverse_lazy('login')
 
     def get_queryset(self):
-        return Appointment.objects.filter(created_by=self.request.user).order_by('appointment_datetime')
+        return Appointment.objects.filter(
+            created_by=self.request.user).order_by('appointment_datetime')
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
@@ -684,7 +767,8 @@ class AppointmentCreateView(LoginRequiredMixin, CreateView):
 
     def form_valid(self, form):
         form.instance.created_by = self.request.user
-        messages.success(self.request, 'Your appointment has been booked successfully!')
+        messages.success(
+            self.request, 'Your appointment has been booked successfully!')
         return super().form_valid(form)
 
     def get_success_url(self):
@@ -698,9 +782,9 @@ def post_answer(request, slug):
     if not request.user.is_authenticated:
         messages.error(request, 'You must be logged in to post an answer.')
         return redirect('login')
-    
+
     question = get_object_or_404(ForumQuestion, slug=slug)
-    
+
     if request.method == 'POST':
         form = ForumAnswerForm(request.POST)
         if form.is_valid():
@@ -708,17 +792,17 @@ def post_answer(request, slug):
             answer.question = question
             answer.author = request.user
             answer.save()
-            
+
             # Mark question as answered if it's the first answer
             if not question.is_answered:
                 question.is_answered = True
                 question.save(update_fields=['is_answered'])
-            
+
             messages.success(request, 'Your answer has been posted!')
             return redirect('forum_question', slug=slug)
         else:
             messages.error(request, 'Please correct the errors below.')
-    
+
     return redirect('forum_question', slug=slug)
 
 
@@ -738,6 +822,7 @@ class IsAuthorMixin(UserPassesTestMixin):
     Mixin to check if the user can manage the object
     Allows object authors and admin users (staff/superuser).
     """
+
     def test_func(self):
         obj = self.get_object()
         return (
@@ -745,9 +830,10 @@ class IsAuthorMixin(UserPassesTestMixin):
             or self.request.user.is_staff
             or self.request.user.is_superuser
         )
-    
+
     def handle_no_permission(self):
-        messages.error(self.request, 'You do not have permission to delete this item.')
+        messages.error(
+            self.request, 'You do not have permission to delete this item.')
         return redirect(self.request.META.get('HTTP_REFERER', 'forum'))
 
 
@@ -773,27 +859,38 @@ class UpdateBlogPostView(LoginRequiredMixin, IsAuthorMixin, UpdateView):
         return role_allowed and super().test_func()
 
     def handle_no_permission(self):
-        messages.error(self.request, 'You do not have permission to manage blog posts.')
+        messages.error(
+            self.request, 'You do not have permission to manage blog posts.')
         return redirect('home')
-    
+
     def form_valid(self, form):
-        """Update the blog post and optionally import image from Cloudinary link."""
-        cloudinary_image_link = (form.cleaned_data.get('cloudinary_image_link') or '').strip()
+        """Update post and optionally import image from Cloudinary link."""
+        cloudinary_image_link = (form.cleaned_data.get(
+            'cloudinary_image_link') or '').strip()
 
         if cloudinary_image_link:
             try:
-                upload_result = uploader.upload(cloudinary_image_link, folder='blog')
+                upload_result = uploader.upload(
+                    cloudinary_image_link, folder='blog')
                 public_id = upload_result.get('public_id')
                 if public_id:
                     form.instance.featured_image = public_id
             except Exception as exc:
-                # Keep existing image if link import fails, but still save text fields.
+                # Keep existing image if link import fails, but still save text
+                # fields.
                 self.object = self.get_object()
                 self.object.title = form.cleaned_data['title']
                 self.object.content = form.cleaned_data['content']
                 self.object.category = form.cleaned_data.get('category')
-                self.object.is_published = form.cleaned_data.get('is_published', False)
-                self.object.save(update_fields=['title', 'content', 'category', 'is_published', 'updated_at'])
+                self.object.is_published = form.cleaned_data.get(
+                    'is_published', False)
+                self.object.save(
+                    update_fields=[
+                        'title',
+                        'content',
+                        'category',
+                        'is_published',
+                        'updated_at'])
                 messages.warning(
                     self.request,
                     f'Post updated, but Cloudinary image import failed: {exc}'
@@ -802,27 +899,39 @@ class UpdateBlogPostView(LoginRequiredMixin, IsAuthorMixin, UpdateView):
 
         try:
             response = super().form_valid(form)
-            messages.success(self.request, 'Your blog post has been updated successfully!')
+            messages.success(
+                self.request, 'Your blog post has been updated successfully!')
             return response
         except CloudinaryError:
             self.object = self.get_object()
             self.object.title = form.cleaned_data['title']
             self.object.content = form.cleaned_data['content']
             self.object.category = form.cleaned_data.get('category')
-            self.object.is_published = form.cleaned_data.get('is_published', False)
-            self.object.save(update_fields=['title', 'content', 'category', 'is_published', 'updated_at'])
+            self.object.is_published = form.cleaned_data.get(
+                'is_published', False)
+            self.object.save(
+                update_fields=[
+                    'title',
+                    'content',
+                    'category',
+                    'is_published',
+                    'updated_at'])
             messages.warning(
                 self.request,
-                'Your post was updated, but the new image could not be uploaded. The previous image was kept.'
+                (
+                    'Your post was updated, but the new image could not be '
+                    'uploaded. The previous image was kept.'
+                )
             )
             return redirect(self.get_success_url())
 
     def get_context_data(self, **kwargs):
         """Provide a safe preview URL for the current featured image."""
         context = super().get_context_data(**kwargs)
-        context['current_image_url'] = _safe_blog_image_url(self.object.featured_image)
+        context['current_image_url'] = _safe_blog_image_url(
+            self.object.featured_image)
         return context
-    
+
     def get_success_url(self):
         """Redirect to the blog post detail page"""
         return reverse_lazy('blog_detail', kwargs={'slug': self.object.slug})
@@ -839,18 +948,24 @@ class UpdateForumQuestionView(LoginRequiredMixin, IsAuthorMixin, UpdateView):
     slug_field = 'slug'
     slug_url_kwarg = 'slug'
     login_url = reverse_lazy('login')
-    
+
     def form_valid(self, form):
         """Update the question and show success message"""
-        messages.success(self.request, 'Your question has been updated successfully!')
+        messages.success(
+            self.request, 'Your question has been updated successfully!')
         return super().form_valid(form)
-    
+
     def get_success_url(self):
         """Redirect to the forum question detail page"""
-        return reverse_lazy('forum_question', kwargs={'slug': self.object.slug})
+        return reverse_lazy(
+            'forum_question', kwargs={
+                'slug': self.object.slug})
 
 
-class UpdateForumAnswerView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+class UpdateForumAnswerView(
+        LoginRequiredMixin,
+        UserPassesTestMixin,
+        UpdateView):
     """
     View for updating a forum answer
     Only the author can update their own answer
@@ -860,25 +975,29 @@ class UpdateForumAnswerView(LoginRequiredMixin, UserPassesTestMixin, UpdateView)
     template_name = 'forum/edit_forum_answer.html'
     pk_url_kwarg = 'answer_id'
     login_url = reverse_lazy('login')
-    
+
     def test_func(self):
         """Check if user is the author of the answer"""
         obj = self.get_object()
         return obj.author == self.request.user
-    
+
     def handle_no_permission(self):
         """Handle permission denied"""
-        messages.error(self.request, 'You do not have permission to edit this answer.')
+        messages.error(
+            self.request, 'You do not have permission to edit this answer.')
         return redirect(self.request.META.get('HTTP_REFERER', 'forum'))
-    
+
     def form_valid(self, form):
         """Update the answer and show success message"""
-        messages.success(self.request, 'Your answer has been updated successfully!')
+        messages.success(
+            self.request, 'Your answer has been updated successfully!')
         return super().form_valid(form)
-    
+
     def get_success_url(self):
         """Redirect back to the question"""
-        return reverse_lazy('forum_question', kwargs={'slug': self.object.question.slug})
+        return reverse_lazy(
+            'forum_question', kwargs={
+                'slug': self.object.question.slug})
 
 
 class UpdateTaskView(LoginRequiredMixin, UpdateView):
@@ -891,25 +1010,27 @@ class UpdateTaskView(LoginRequiredMixin, UpdateView):
     template_name = 'tasks/edit_task.html'
     pk_url_kwarg = 'pk'
     login_url = reverse_lazy('login')
-    
+
     def test_func(self):
         """Check if user created the task"""
         obj = self.get_object()
         return obj.created_by == self.request.user
-    
+
     def dispatch(self, request, *args, **kwargs):
         """Check permissions before processing request"""
         obj = self.get_object()
         if obj.created_by != request.user:
-            messages.error(request, 'You do not have permission to edit this task.')
+            messages.error(
+                request, 'You do not have permission to edit this task.')
             return redirect('tasks')
         return super().dispatch(request, *args, **kwargs)
-    
+
     def form_valid(self, form):
         """Update the task and show success message"""
-        messages.success(self.request, 'Your task has been updated successfully!')
+        messages.success(
+            self.request, 'Your task has been updated successfully!')
         return super().form_valid(form)
-    
+
     def get_success_url(self):
         """Redirect back to tasks"""
         return reverse_lazy('tasks')
@@ -925,20 +1046,23 @@ class UpdateAppointmentView(LoginRequiredMixin, UpdateView):
     template_name = 'appointments/edit_appointment.html'
     pk_url_kwarg = 'pk'
     login_url = reverse_lazy('login')
-    
+
     def dispatch(self, request, *args, **kwargs):
         """Check permissions before processing request"""
         obj = self.get_object()
         if obj.created_by != request.user:
-            messages.error(request, 'You do not have permission to edit this appointment.')
+            messages.error(
+                request,
+                'You do not have permission to edit this appointment.')
             return redirect('appointments')
         return super().dispatch(request, *args, **kwargs)
-    
+
     def form_valid(self, form):
         """Update the appointment and show success message"""
-        messages.success(self.request, 'Your appointment has been updated successfully!')
+        messages.success(
+            self.request, 'Your appointment has been updated successfully!')
         return super().form_valid(form)
-    
+
     def get_success_url(self):
         """Redirect back to appointments"""
         return reverse_lazy('appointments')
@@ -958,12 +1082,15 @@ class DeleteAppointmentView(LoginRequiredMixin, DeleteView):
     def dispatch(self, request, *args, **kwargs):
         obj = self.get_object()
         if obj.created_by != request.user:
-            messages.error(request, 'You do not have permission to delete this appointment.')
+            messages.error(
+                request,
+                'You do not have permission to delete this appointment.')
             return redirect('appointments')
         return super().dispatch(request, *args, **kwargs)
 
     def delete(self, request, *args, **kwargs):
-        messages.success(request, 'Your appointment has been deleted successfully!')
+        messages.success(
+            request, 'Your appointment has been deleted successfully!')
         return super().delete(request, *args, **kwargs)
 
 
@@ -978,10 +1105,11 @@ class DeleteForumQuestionView(LoginRequiredMixin, IsAuthorMixin, DeleteView):
     template_name = 'forum/forumquestion_confirm_delete.html'
     success_url = reverse_lazy('forum')
     login_url = reverse_lazy('login')
-    
+
     def delete(self, request, *args, **kwargs):
         """Delete the question and show success message"""
-        messages.success(request, 'Your question has been deleted successfully!')
+        messages.success(
+            request, 'Your question has been deleted successfully!')
         return super().delete(request, *args, **kwargs)
 
 
@@ -994,11 +1122,13 @@ class DeleteForumAnswerView(LoginRequiredMixin, IsAuthorMixin, DeleteView):
     pk_url_kwarg = 'answer_id'
     template_name = 'forum/forumanswer_confirm_delete.html'
     login_url = reverse_lazy('login')
-    
+
     def get_success_url(self):
         """Redirect back to the question"""
-        return reverse_lazy('forum_question', kwargs={'slug': self.object.question.slug})
-    
+        return reverse_lazy(
+            'forum_question', kwargs={
+                'slug': self.object.question.slug})
+
     def delete(self, request, *args, **kwargs):
         """Delete the answer and show success message"""
         messages.success(request, 'Your answer has been deleted successfully!')
@@ -1027,12 +1157,12 @@ class DeleteBlogPostView(LoginRequiredMixin, IsAuthorMixin, DeleteView):
         return role_allowed and super().test_func()
 
     def handle_no_permission(self):
-        messages.error(self.request, 'You do not have permission to manage blog posts.')
+        messages.error(
+            self.request, 'You do not have permission to manage blog posts.')
         return redirect('home')
-    
+
     def delete(self, request, *args, **kwargs):
         """Delete the blog post and show success message"""
-        messages.success(request, 'Your blog post has been deleted successfully!')
+        messages.success(
+            request, 'Your blog post has been deleted successfully!')
         return super().delete(request, *args, **kwargs)
-
-

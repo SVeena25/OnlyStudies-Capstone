@@ -22,12 +22,15 @@ class FullAppFunctionalityProcedureTest(TestCase):
 
     def setUp(self):
         self.client = Client()
-        self.student = User.objects.create_user(username="student_a", password="testpass123")
-        self.instructor = User.objects.create_user(username="instructor_a", password="testpass123")
+        self.student = User.objects.create_user(
+            username="student_a", password="testpass123")
+        self.instructor = User.objects.create_user(
+            username="instructor_a", password="testpass123")
         instructor_group, _ = Group.objects.get_or_create(name="Instructor")
         self.instructor.groups.add(instructor_group)
 
-        self.category = Category.objects.create(name="Procedure", slug="procedure")
+        self.category = Category.objects.create(
+            name="Procedure", slug="procedure")
         self.post = BlogPost.objects.create(
             title="Procedure Post",
             content="X" * 120,
@@ -74,7 +77,8 @@ class FullAppUsabilityResponsivenessProcedureTest(TestCase):
 
     def setUp(self):
         self.client = Client()
-        self.user = User.objects.create_user(username="uiuser", password="testpass123", first_name="UI")
+        self.user = User.objects.create_user(
+            username="uiuser", password="testpass123", first_name="UI")
 
     def test_base_template_exposes_accessibility_and_responsive_hooks(self):
         response = self.client.get(reverse("home"))
@@ -105,12 +109,16 @@ class FullAppDataManagementProcedureTest(TestCase):
 
     def setUp(self):
         self.client = Client()
-        self.user_a = User.objects.create_user(username="data_a", password="testpass123")
-        self.user_b = User.objects.create_user(username="data_b", password="testpass123")
+        self.user_a = User.objects.create_user(
+            username="data_a", password="testpass123")
+        self.user_b = User.objects.create_user(
+            username="data_b", password="testpass123")
         self.category = Category.objects.create(name="Data", slug="data")
 
-        Task.objects.create(title="A Task", created_by=self.user_a, priority="medium")
-        Task.objects.create(title="B Task", created_by=self.user_b, priority="medium")
+        Task.objects.create(
+            title="A Task", created_by=self.user_a, priority="medium")
+        Task.objects.create(
+            title="B Task", created_by=self.user_b, priority="medium")
 
         Appointment.objects.create(
             title="A Appointment",
@@ -135,8 +143,16 @@ class FullAppDataManagementProcedureTest(TestCase):
         self.assertNotContains(appt_response, "B Appointment")
 
     def test_notifications_api_is_user_scoped(self):
-        Notification.objects.create(user=self.user_a, title="A", message="A", notification_type="system")
-        Notification.objects.create(user=self.user_b, title="B", message="B", notification_type="system")
+        Notification.objects.create(
+            user=self.user_a,
+            title="A",
+            message="A",
+            notification_type="system")
+        Notification.objects.create(
+            user=self.user_b,
+            title="B",
+            message="B",
+            notification_type="system")
 
         self.client.login(username="data_a", password="testpass123")
         response = self.client.get(reverse("notifications_api"))
@@ -160,7 +176,8 @@ class FullAppDataManagementProcedureTest(TestCase):
             # Keep the expected DB error inside its own atomic block so the
             # surrounding test transaction remains usable.
             with transaction.atomic():
-                BlogPostVote.objects.create(blog_post=post, user=self.user_a, value=1)
+                BlogPostVote.objects.create(
+                    blog_post=post, user=self.user_a, value=1)
 
         past_appt = Appointment(
             title="Past Invalid",

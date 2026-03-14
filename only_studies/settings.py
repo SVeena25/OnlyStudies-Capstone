@@ -36,19 +36,21 @@ TEMPLATES_DIR = os.path.join(BASE_DIR, 'templates')
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.environ.get('SECRET_KEY')
 if not SECRET_KEY and IS_PRODUCTION:
-    raise ImproperlyConfigured('SECRET_KEY must be set securely in production environment variables.')
+    raise ImproperlyConfigured(
+        'SECRET_KEY must be set securely in production environment variables.')
 if not SECRET_KEY:
     SECRET_KEY = get_random_secret_key()
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = str(os.environ.get('DEBUG', 'False')).strip().lower() in {'1', 'true', 'yes', 'on'}
+DEBUG = str(os.environ.get('DEBUG', 'False')).strip().lower() in {
+    '1', 'true', 'yes', 'on'}
 if IS_PRODUCTION:
     DEBUG = False
 
 database_url = os.environ.get("DATABASE_URL")
 
 # Allow local dev and common loopback hosts; add prod domains as needed
-ALLOWED_HOSTS = ["localhost", 
+ALLOWED_HOSTS = ["localhost",
                  "127.0.0.1",
                  "testserver",
                  "0.0.0.0",
@@ -62,18 +64,18 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
-    
+
     # Third-party apps - Cloudinary must be before staticfiles
     'django.contrib.staticfiles',
     'cloudinary_storage',
     'cloudinary',
     # 'django.contrib.sites',
-    
+
     # Third-party auth apps
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
-    
+
     # Local apps
     'app_onlystudies',
 ]
@@ -116,10 +118,9 @@ WSGI_APPLICATION = 'only_studies.wsgi.application'
 
 DATABASES = {
     'default': dj_database_url.parse(
-         os.environ.get("DATABASE_URL", f"sqlite:///{BASE_DIR / 'db.sqlite3'}")
+        os.environ.get("DATABASE_URL", f"sqlite:///{BASE_DIR / 'db.sqlite3'}")
     )
 }
-
 
 
 # Password validation
@@ -127,16 +128,28 @@ DATABASES = {
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+        'NAME': (
+            'django.contrib.auth.password_validation.'
+            'UserAttributeSimilarityValidator'
+        ),
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        'NAME': (
+            'django.contrib.auth.password_validation.'
+            'MinimumLengthValidator'
+        ),
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+        'NAME': (
+            'django.contrib.auth.password_validation.'
+            'CommonPasswordValidator'
+        ),
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+        'NAME': (
+            'django.contrib.auth.password_validation.'
+            'NumericPasswordValidator'
+        ),
     },
 ]
 
@@ -183,7 +196,11 @@ has_cloudinary = bool(
 )
 
 if has_cloudinary:
-    if cloudinary_url and not (cloudinary_cloud_name and cloudinary_api_key and cloudinary_api_secret):
+    if cloudinary_url and not (
+        cloudinary_cloud_name
+        and cloudinary_api_key
+        and cloudinary_api_secret
+    ):
         parsed = urlparse(cloudinary_url)
         cloudinary_cloud_name = (parsed.hostname or '').strip()
         cloudinary_api_key = unquote(parsed.username or '').strip()
@@ -285,7 +302,9 @@ if IS_PRODUCTION:
     # Content Security Policy
     SECURE_CONTENT_SECURITY_POLICY = {
         "default-src": ("'self'",),
-        "script-src": ("'self'", "'unsafe-inline'", "cdn.jsdelivr.net", "code.jquery.com"),
+        "script-src": (
+            "'self'", "'unsafe-inline'", "cdn.jsdelivr.net", "code.jquery.com"
+        ),
         "style-src": ("'self'", "'unsafe-inline'", "cdn.jsdelivr.net"),
         "img-src": ("'self'", "data:", "https:", "*.cloudinary.com"),
         "font-src": ("'self'", "cdn.jsdelivr.net"),

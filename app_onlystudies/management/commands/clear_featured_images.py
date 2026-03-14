@@ -3,7 +3,10 @@ from app_onlystudies.models import BlogPost
 
 
 class Command(BaseCommand):
-    help = 'Clear all featured images from blog posts to fix 404 errors on Heroku'
+    help = (
+        'Clear all featured images from blog posts to fix 404 errors '
+        'on Heroku'
+    )
 
     def handle(self, *args, **options):
         """
@@ -13,20 +16,23 @@ class Command(BaseCommand):
         """
         blog_posts = BlogPost.objects.exclude(featured_image='')
         count = blog_posts.count()
-        
+
         if count == 0:
             self.stdout.write(
                 self.style.WARNING('No blog posts with featured images found.')
             )
             return
-        
+
         # Clear all featured images
         for post in blog_posts:
             post.featured_image = ''
             post.save()
-        
+
         self.stdout.write(
             self.style.SUCCESS(
-                f'Successfully cleared featured images from {count} blog post(s).'
+                (
+                    'Successfully cleared featured images from '
+                    f'{count} blog post(s).'
+                )
             )
         )

@@ -32,5 +32,6 @@ urlpatterns += [
 
 if not getattr(settings, 'IS_PRODUCTION', False):
     urlpatterns += [
-        re_path(r'^media/(?P<path>.*)$', media_serve, {'document_root': settings.MEDIA_ROOT}),
+        re_path(r'^media/(?P<path>.*)$', media_serve,
+                {'document_root': settings.MEDIA_ROOT}),
     ]
