@@ -134,7 +134,7 @@
                                                         <img src="{% if post.display_image_url %}{{ post.display_image_url }}{% else %}{% static 'img/blog.png' %}{% endif %}" alt="{{ post.title }}" class="img-fluid rounded" style="width: 100%; object-fit: cover; max-height: 160px;" width="480" height="270" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='{% static 'img/blog.png' %}'">
                                                     </div>
                                                     <div class="col-12 col-md-8">
-                                                        <h6 class="mb-1">{{ post.title }}</h6>
+                                                        <h3 class="mb-1 h6">{{ post.title }}</h3>
                                                         <small class="text-muted d-block mb-2">
                                                             By {{ post.author.get_full_name|default:post.author.username }} • {{ post.created_at|date:"M d, Y" }}
                                                         </small>
@@ -190,7 +190,7 @@
                 <div class="col-12 col-md-6 col-lg-4">
                     <div class="card exam-card h-100">
                         <div class="card-body">
-                            <h6 class="card-title mb-2">Exam 1</h6>
+                            <h3 class="card-title mb-2 h6">Exam 1</h3>
                             <p class="exam-description">Prepare for your first exam with comprehensive study materials and practice tests.</p>
                             <a href="{% url 'apply_exam' 'exam-1' %}" class="btn btn-outline-dark btn-sm w-100">Apply for Exam 1</a>
                         </div>
@@ -201,7 +201,7 @@
                 <div class="col-12 col-md-6 col-lg-4">
                     <div class="card exam-card h-100">
                         <div class="card-body">
-                            <h6 class="card-title mb-2">Exam 2</h6>
+                            <h3 class="card-title mb-2 h6">Exam 2</h3>
                             <p class="exam-description">Master advanced concepts with expert-led tutorials and interactive quizzes.</p>
                             <a href="{% url 'apply_exam' 'exam-2' %}" class="btn btn-outline-dark btn-sm w-100">Apply for Exam 2</a>
                         </div>
@@ -212,7 +212,7 @@
                 <div class="col-12 col-md-6 col-lg-4">
                     <div class="card exam-card h-100">
                         <div class="card-body">
-                            <h6 class="card-title mb-2">Exam 3</h6>
+                            <h3 class="card-title mb-2 h6">Exam 3</h3>
                             <p class="exam-description">Achieve excellence with final revision modules and mock examinations.</p>
                             <a href="{% url 'apply_exam' 'exam-3' %}" class="btn btn-outline-dark btn-sm w-100">Apply for Exam 3</a>
                         </div>
