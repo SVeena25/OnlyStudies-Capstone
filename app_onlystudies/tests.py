@@ -165,24 +165,24 @@ class CategoryModelTest(TestCase):
     def setUp(self):
         """Create a test category"""
         self.category = Category.objects.create(
-            name='MBA',
-            slug='mba',
-            description='Master of Business Administration'
+            name='Test MBA',
+            slug='test-mba',
+            description='Test Master of Business Administration'
         )
 
     def test_category_creation(self):
         """Test category is created correctly"""
-        self.assertEqual(self.category.name, 'MBA')
-        self.assertEqual(self.category.slug, 'mba')
+        self.assertEqual(self.category.name, 'Test MBA')
+        self.assertEqual(self.category.slug, 'test-mba')
 
     def test_category_str_representation(self):
         """Test category string representation"""
-        self.assertEqual(str(self.category), 'MBA')
+        self.assertEqual(str(self.category), 'Test MBA')
 
     def test_category_slug_unique(self):
         """Test category slug is unique"""
         with self.assertRaises(Exception):
-            Category.objects.create(name='MBA 2', slug='mba')
+            Category.objects.create(name='Test MBA 2', slug='test-mba')
 
 
 class SubCategoryModelTest(TestCase):
@@ -191,8 +191,8 @@ class SubCategoryModelTest(TestCase):
     def setUp(self):
         """Create test category and subcategory"""
         self.category = Category.objects.create(
-            name='Engineering',
-            slug='engineering'
+            name='Test Engineering',
+            slug='test-engineering'
         )
         self.subcategory = SubCategory.objects.create(
             category=self.category,
@@ -208,7 +208,17 @@ class SubCategoryModelTest(TestCase):
 
     def test_subcategory_str_representation(self):
         """Test subcategory string representation"""
-        self.assertEqual(str(self.subcategory), 'Engineering - Mechanical')
+        self.assertEqual(str(self.subcategory), 'Test Engineering - Mechanical')
+
+
+class SeededCategoryRoutesTest(TestCase):
+    """Ensure default category links resolve on fresh databases."""
+
+    def test_seeded_medical_neet_route_loads(self):
+        response = self.client.get(reverse('subcategory', args=['medical', 'neet']))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'NEET')
 
 
 class BlogPostModelTest(TestCase):
@@ -222,8 +232,8 @@ class BlogPostModelTest(TestCase):
             password='testpass123'
         )
         self.category = Category.objects.create(
-            name='Medical',
-            slug='medical'
+            name='Health',
+            slug='health'
         )
         self.blog_post = BlogPost.objects.create(
             title='Medical Test Article',
