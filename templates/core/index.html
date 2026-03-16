@@ -123,7 +123,7 @@
                 <div class="col-12 col-lg-8">
                     <div class="card h-100">
                         <div class="card-body">
-                            <h5 class="card-title mb-3">Latest Blog Posts</h5>
+                            <h2 class="card-title mb-3 h5">Latest Blog Posts</h2>
                             {% if home_blog_posts %}
                                 <div class="row g-3">
                                     {% for post in home_blog_posts|slice:":3" %}
@@ -157,7 +157,7 @@
                 <div class="col-12 col-lg-4">
                     <div class="card h-100">
                         <div class="card-body">
-                            <h5 class="card-title mb-3">Notifications</h5>
+                            <h2 class="card-title mb-3 h5">Notifications</h2>
                             {% if user.is_authenticated %}
                                 <div id="view-updates-alert" class="alert alert-info" role="alert">
                                     You have new updates available!
@@ -183,7 +183,7 @@
 
         <!-- Explore Exams Section -->
         <section class="exams-section mb-5">
-            <h5 class="section-title mb-3">Explore Exams</h5>
+            <h2 class="section-title mb-3 h5">Explore Exams</h2>
             <!-- Explore Exams -->
             <div class="row g-3 mb-3">
                 <!-- Exam 1 Card -->
@@ -237,7 +237,7 @@
                                     <strong>Anything you would want to ask experts?</strong>
                                 </div>
                                 <label for="askTxtBx" class="visually-hidden">Question prompt</label>
-                                <textarea id="askTxtBx" class="qst-txtar form-control" style="min-height: 60px; text-align: left; background-color: white; cursor: pointer;" placeholder="Write your question here..." rows="2" readonly aria-readonly="true" onclick="window.location.href='{% url 'ask_question' %}'" onfocus="window.location.href='{% url 'ask_question' %}'"></textarea>
+                                <textarea id="askTxtBx" class="qst-txtar form-control" style="min-height: 60px; text-align: left; background-color: white; cursor: pointer;" placeholder="Write your question here..." rows="2" readonly onclick="window.location.href='{% url 'ask_question' %}'" onfocus="window.location.href='{% url 'ask_question' %}'"></textarea>
                             </div>
                             <div class="d-flex gap-2 justify-content-center">
                                 <a href="{% url 'forum' %}" class="btn btn-primary">
